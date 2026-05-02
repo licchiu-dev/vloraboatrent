@@ -1,0 +1,161 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  SUPERADMIN
+  ADMIN
+  PARTNER
+}
+
+enum PartnerType {
+  AGENZIA_VIAGGI
+  AGENZIA_TURISTICA
+  GUIDA
+  PRIVATO
+}
+
+enum ProductCategory {
+  NOLEGGIO
+  ESPERIENZA
+  EXTRA
+}
+
+enum TimeSlot {
+  GIORNATA_INTERA
+  MEZZA_GIORNATA
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role
+  partner   Partner?
+  createdAt DateTime @default(now())
+  active    Boolean  @default(true)
+}
+
+model Partner {
+  id                String         @id @default(cuid())
+  userId            String         @unique
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyName       String
+  type              PartnerType
+  discountCode      String         @unique
+  defaultCommission Float
+  totalEarnings     Float          @default(0)
+  pendingEarnings   Float          @default(0)
+  bookings          Booking[]
+  partnerPrices     PartnerPrice[]
+  phone             String?
+  createdAt         DateTime       @default(now())
+}
+
+model Product {
+  id            String          @id @default(cuid())
+  name          String          @unique
+  category      ProductCategory
+  basePrice     Float
+  description   String?
+  active        Boolean         @default(true)
+  partnerPrices PartnerPrice[]
+  bookingItems  BookingItem[]
+  createdAt     DateTime        @default(now())
+}
+
+model PartnerPrice {
+  id            String   @id @default(cuid())
+  partner       Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  partnerId     String
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId     String
+  commissionPct Float?
+  fixedNetPrice Float?
+
+  @@unique([partnerId, productId])
+}
+
+model Customer {
+  id        String    @id @default(cuid())
+  name      String
+  email     String    @unique
+  phone     String
+  bookings  Booking[]
+  createdAt DateTime  @default(now())
+}
+
+model Booking {
+  id            String        @id @default(cuid())
+  customer      Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customerId    String
+  date          DateTime
+  timeSlot      TimeSlot
+  status        BookingStatus
+  items         BookingItem[]
+  partner       Partner?      @relation(fields: [partnerId], references: [id])
+  partnerId     String?
+  discountCode  String?
+  totalPublic   Float?
+  totalPartner  Float?
+  commission    Float?
+  notes         String?
+  internalNotes String?
+  createdBy     String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model BookingItem {
+  id        String  @id @default(cuid())
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  bookingId String
+  product   Product @relation(fields: [productId], references: [id])
+  productId String
+  quantity  Int     @default(1)
+  unitPrice Float
+  total     Float
+}
+
+model Supplier {
+  id        String    @id @default(cuid())
+  name      String
+  type      String
+  contact   String?
+  notes     String?
+  expenses  Expense[]
+  createdAt DateTime  @default(now())
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  supplier    Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  supplierId  String
+  amount      Float
+  description String
+  date        DateTime
+  createdAt   DateTime @default(now())
+}
+
+model BackupLog {
+  id     String   @id @default(cuid())
+  date   DateTime @default(now())
+  type   String
+  status String
+  files  String[]
+  error  String?
+}

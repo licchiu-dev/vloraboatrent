@@ -1,0 +1,39 @@
+import { BookingStatus, TimeSlot } from '@prisma/client'
+import { createBooking } from '@/lib/bookings'
+import { apiRequireRole } from '@/lib/guards'
+import { prisma } from '@/lib/prisma'
+
+export async function GET() {
+  const guard = await apiRequireRole(['SUPERADMIN', 'ADMIN', 'PARTNER'])
+  if ('error' in guard) return guard.error
+
+  const where = guard.session.user.role === 'PARTNER' ? { partnerId: guard.session.user.partnerId } : {}
+  const bookings = await prisma.booking.findMany({
+    where,
+    include: { customer: true, partner: true, items: { include: { product: true } } },
+    orderBy: { date: 'desc' },
+  })
+  return Response.json(bookings)
+}
+
+export async function POST(request: Request) {
+  const guard = await apiRequireRole(['SUPERADMIN', 'ADMIN', 'PARTNER'])
+  if ('error' in guard) return guard.error
+  const body = await request.json()
+  const isPartner = guard.session.user.role === 'PARTNER'
+
+  const booking = await createBooking({
+    customer: body.customer,
+    date: body.date,
+    timeSlot: body.timeSlot in TimeSlot ? body.timeSlot : 'GIORNATA_INTERA',
+    status: isPartner ? BookingStatus.PENDING : body.status ?? BookingStatus.CONFIRMED,
+    items: body.items ?? [],
+    partnerId: isPartner ? guard.session.user.partnerId : body.partnerId,
+    discountCode: body.discountCode,
+    notes: body.notes,
+    internalNotes: isPartner ? null : body.internalNotes,
+    createdBy: isPartner ? 'PARTNER' : 'ADMIN',
+  })
+
+  return Response.json(booking)
+}

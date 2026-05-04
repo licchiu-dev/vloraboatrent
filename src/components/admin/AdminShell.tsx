@@ -15,7 +15,7 @@ import {
   WalletCards,
 } from 'lucide-react'
 
-type AdminLang = 'en' | 'it' | 'sq'
+type AdminLang = 'en' | 'it' | 'sq' | 'ar' | 'ru' | 'zh'
 
 const shellCopy = {
   en: {
@@ -65,6 +65,54 @@ const shellCopy = {
     partnerArea: 'Zona partner',
     logout: 'Dil',
     language: 'Gjuha',
+  },
+  ar: {
+    dashboard: 'لوحة التحكم',
+    bookings: 'الحجوزات',
+    customers: 'العملاء',
+    partners: 'الشركاء',
+    products: 'المنتجات',
+    suppliers: 'الموردون',
+    analytics: 'الإحصاءات',
+    settings: 'الإعدادات',
+    myBookings: 'حجوزاتي',
+    newBooking: 'حجز جديد',
+    adminArea: 'منطقة الإدارة',
+    partnerArea: 'منطقة الشريك',
+    logout: 'تسجيل الخروج',
+    language: 'اللغة',
+  },
+  ru: {
+    dashboard: 'Панель',
+    bookings: 'Бронирования',
+    customers: 'Клиенты',
+    partners: 'Партнеры',
+    products: 'Продукты',
+    suppliers: 'Поставщики',
+    analytics: 'Аналитика',
+    settings: 'Настройки',
+    myBookings: 'Мои бронирования',
+    newBooking: 'Новое бронирование',
+    adminArea: 'Админ-зона',
+    partnerArea: 'Партнерская зона',
+    logout: 'Выйти',
+    language: 'Язык',
+  },
+  zh: {
+    dashboard: '仪表盘',
+    bookings: '预订',
+    customers: '客户',
+    partners: '合作伙伴',
+    products: '产品',
+    suppliers: '供应商',
+    analytics: '统计',
+    settings: '设置',
+    myBookings: '我的预订',
+    newBooking: '新预订',
+    adminArea: '管理区',
+    partnerArea: '合作伙伴区',
+    logout: '退出',
+    language: '语言',
   },
 }
 
@@ -159,6 +207,9 @@ export default function AdminShell({
                 <option value="en">EN</option>
                 <option value="it">IT</option>
                 <option value="sq">SQ</option>
+                <option value="ar">AR</option>
+                <option value="ru">RU</option>
+                <option value="zh">ZH</option>
               </select>
             </label>
             <span className="rounded-full bg-ocean-light px-3 py-1 text-xs font-bold text-ocean-deep">{session?.user?.role}</span>

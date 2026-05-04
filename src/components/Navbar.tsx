@@ -23,13 +23,35 @@ const labels = {
     book: 'Rezervo',
     bookNow: 'Rezervo tani',
   },
+  ar: {
+    rentals: 'تأجير القوارب',
+    fishing: 'تجربة صيد',
+    book: 'احجز',
+    bookNow: 'احجز الآن',
+  },
+  ru: {
+    rentals: 'Аренда лодок',
+    fishing: 'Рыболовный тур',
+    book: 'Бронь',
+    bookNow: 'Забронировать',
+  },
+  zh: {
+    rentals: '船只租赁',
+    fishing: '海钓体验',
+    book: '预订',
+    bookNow: '立即预订',
+  },
 }
 
 type Lang = keyof typeof labels
+const languages: Lang[] = ['en', 'it', 'sq', 'ar', 'ru', 'zh']
 
 function getLang(pathname: string): Lang {
   if (pathname.startsWith('/it')) return 'it'
   if (pathname.startsWith('/sq')) return 'sq'
+  if (pathname.startsWith('/ar')) return 'ar'
+  if (pathname.startsWith('/ru')) return 'ru'
+  if (pathname.startsWith('/zh')) return 'zh'
   return 'en'
 }
 
@@ -53,6 +75,7 @@ export default function Navbar() {
   const lang = getLang(pathname)
   const copy = labels[lang]
   const section = currentSection(pathname)
+  const dir = lang === 'ar' ? 'rtl' : 'ltr'
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60)
@@ -74,11 +97,11 @@ export default function Navbar() {
           : 'py-5'
       }`}
     >
-      <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
+      <div className="max-w-6xl mx-auto px-6 flex items-center justify-between" dir={dir}>
 
         {/* Logo */}
         {/* TODO: Sostituire il testo con un logo immagine reale */}
-        <Link href="/" className="flex items-center gap-2 text-white font-black text-xl tracking-tight">
+        <Link href={localizedPath(lang, 'home')} className="flex items-center gap-2 text-white font-black text-xl tracking-tight">
           <span className="text-2xl">⚓</span>
           <span>Valona <span className="text-sand">Fishing</span></span>
         </Link>
@@ -95,7 +118,7 @@ export default function Navbar() {
             </Link>
           ))}
           <div className="flex items-center gap-2 rounded-full border border-white/20 px-2 py-1">
-            {(['en', 'it', 'sq'] as Lang[]).map((item) => (
+            {languages.map((item) => (
               <Link
                 key={item}
                 href={localizedPath(item, section)}
@@ -128,8 +151,8 @@ export default function Navbar() {
       </div>
 
       {/* Mobile menu */}
-      <div className={`md:hidden overflow-hidden transition-all duration-300 ${mobileOpen ? 'max-h-80' : 'max-h-0'}`}>
-        <div className="bg-ocean-deep/98 backdrop-blur-md px-6 py-4 flex flex-col gap-1 border-t border-white/10">
+      <div className={`md:hidden overflow-hidden transition-all duration-300 ${mobileOpen ? 'max-h-96' : 'max-h-0'}`}>
+        <div className="bg-ocean-deep/98 backdrop-blur-md px-6 py-4 flex flex-col gap-1 border-t border-white/10" dir={dir}>
           {links.map((l) => (
             <Link
               key={l.href}
@@ -148,7 +171,7 @@ export default function Navbar() {
             {copy.bookNow}
           </a>
           <div className="mt-3 flex items-center justify-center gap-2">
-            {(['en', 'it', 'sq'] as Lang[]).map((item) => (
+            {languages.map((item) => (
               <Link
                 key={item}
                 href={localizedPath(item, section)}

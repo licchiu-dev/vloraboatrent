@@ -31,6 +31,33 @@ const footerCopy = {
     fishing: 'Eksperiencë Peshkimi',
     place: 'Via del Mare, 1 — Vlorë',
   },
+  ar: {
+    tagline: 'تجارب بحرية أصيلة في قلب المتوسط.',
+    navigation: 'التنقل',
+    contacts: 'جهات الاتصال',
+    rights: 'جميع الحقوق محفوظة.',
+    rentals: 'تأجير القوارب',
+    fishing: 'تجربة صيد',
+    place: 'Via del Mare, 1 — فلوره',
+  },
+  ru: {
+    tagline: 'Настоящие морские впечатления в сердце Средиземноморья.',
+    navigation: 'Навигация',
+    contacts: 'Контакты',
+    rights: 'Все права защищены.',
+    rentals: 'Аренда лодок',
+    fishing: 'Рыболовный тур',
+    place: 'Via del Mare, 1 — Влёра',
+  },
+  zh: {
+    tagline: '地中海中心的真实海上体验。',
+    navigation: '导航',
+    contacts: '联系方式',
+    rights: '保留所有权利。',
+    rentals: '船只租赁',
+    fishing: '海钓体验',
+    place: 'Via del Mare, 1 — 发罗拉',
+  },
 }
 
 type Lang = keyof typeof footerCopy
@@ -38,6 +65,9 @@ type Lang = keyof typeof footerCopy
 function getLang(pathname: string): Lang {
   if (pathname.startsWith('/it')) return 'it'
   if (pathname.startsWith('/sq')) return 'sq'
+  if (pathname.startsWith('/ar')) return 'ar'
+  if (pathname.startsWith('/ru')) return 'ru'
+  if (pathname.startsWith('/zh')) return 'zh'
   return 'en'
 }
 
@@ -51,9 +81,10 @@ function path(lang: Lang, page: 'home' | 'rental' | 'fishing') {
 export default function Footer() {
   const lang = getLang(usePathname())
   const copy = footerCopy[lang]
+  const dir = lang === 'ar' ? 'rtl' : 'ltr'
 
   return (
-    <footer className="bg-[#060E1A] text-white">
+    <footer className="bg-[#060E1A] text-white" dir={dir}>
       <div className="max-w-6xl mx-auto px-6 py-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
           <div>

@@ -6,7 +6,7 @@ export type FormTipo = 'noleggio' | 'esperienza' | 'generico'
 
 interface BookingFormProps {
   tipo?: FormTipo
-  lang?: 'en' | 'it' | 'sq'
+  lang?: 'en' | 'it' | 'sq' | 'ar' | 'ru' | 'zh'
 }
 
 interface FormData {
@@ -149,10 +149,98 @@ const copy = {
     submit: 'Dërgo kërkesën',
     requiredFooter: '* Fushat e detyrueshme. Përgjigjemi brenda 24 orësh.',
   },
+  ar: {
+    required: 'حقل مطلوب',
+    dateRequired: 'اختر تاريخا',
+    slotRequired: 'اختر فترة زمنية',
+    sentTitle: 'تم إرسال الطلب!',
+    sentText: 'شكرا لك. استلمنا طلبك وسنتواصل معك قريبا.',
+    fullName: 'الاسم الكامل *',
+    phone: 'الهاتف *',
+    date: 'التاريخ المفضل *',
+    slot: 'الفترة الزمنية *',
+    fullDay: 'يوم كامل',
+    halfDay: 'نصف يوم',
+    adults: 'بالغون',
+    children: 'أطفال',
+    snorkeling: 'عدة سنوركلينغ',
+    sunset: 'طقم الغروب',
+    sunsetHint: 'وصف مؤقت',
+    participants: 'المشاركون',
+    rentGear: 'استئجار معدات الصيد؟',
+    gearSets: 'كم عدد مجموعات المعدات؟',
+    notes: 'ملاحظات إضافية',
+    notesPlaceholder: 'طلبات خاصة، حساسية، احتياجات وصول...',
+    promo: 'هل لديك رمز ترويجي؟',
+    check: 'تحقق',
+    codeApplied: 'تم تطبيق الرمز',
+    codeMissing: 'الرمز غير موجود',
+    submit: 'إرسال طلب الحجز',
+    requiredFooter: '* حقول مطلوبة. نرد خلال 24 ساعة.',
+  },
+  ru: {
+    required: 'Обязательное поле',
+    dateRequired: 'Выберите дату',
+    slotRequired: 'Выберите временной слот',
+    sentTitle: 'Заявка отправлена!',
+    sentText: 'Спасибо. Мы получили вашу заявку и скоро свяжемся с вами.',
+    fullName: 'Имя и фамилия *',
+    phone: 'Телефон *',
+    date: 'Желаемая дата *',
+    slot: 'Временной слот *',
+    fullDay: 'Полный день',
+    halfDay: 'Полдня',
+    adults: 'Взрослые',
+    children: 'Дети',
+    snorkeling: 'Комплект для сноркелинга',
+    sunset: 'Закатный сет',
+    sunsetHint: 'временное описание',
+    participants: 'Участники',
+    rentGear: 'Взять рыболовное снаряжение напрокат?',
+    gearSets: 'Сколько комплектов снаряжения?',
+    notes: 'Дополнительные заметки',
+    notesPlaceholder: 'Особые запросы, аллергии, потребности доступности...',
+    promo: 'У вас есть промокод?',
+    check: 'Проверить',
+    codeApplied: 'Код применен',
+    codeMissing: 'Код не найден',
+    submit: 'Отправить заявку на бронирование',
+    requiredFooter: '* Обязательные поля. Мы отвечаем в течение 24 часов.',
+  },
+  zh: {
+    required: '必填项',
+    dateRequired: '请选择日期',
+    slotRequired: '请选择时间段',
+    sentTitle: '请求已发送！',
+    sentText: '谢谢。我们已收到你的请求，并会尽快联系你。',
+    fullName: '姓名 *',
+    phone: '电话 *',
+    date: '首选日期 *',
+    slot: '时间段 *',
+    fullDay: '全天',
+    halfDay: '半天',
+    adults: '成人',
+    children: '儿童',
+    snorkeling: '浮潜套装',
+    sunset: '日落套装',
+    sunsetHint: '占位描述',
+    participants: '参与人数',
+    rentGear: '租用钓鱼装备？',
+    gearSets: '需要几套装备？',
+    notes: '附加备注',
+    notesPlaceholder: '特殊要求、过敏、无障碍需求...',
+    promo: '你有优惠码吗？',
+    check: '验证',
+    codeApplied: '优惠码已应用',
+    codeMissing: '未找到优惠码',
+    submit: '发送预订请求',
+    requiredFooter: '* 必填项。我们会在 24 小时内回复。',
+  },
 }
 
 export default function BookingForm({ tipo = 'generico', lang = 'en' }: BookingFormProps) {
   const t = copy[lang]
+  const dir = lang === 'ar' ? 'rtl' : 'ltr'
   const [data, setData] = useState<FormData>(initialData)
   const [errors, setErrors] = useState<FormErrors>({})
   const [submitted, setSubmitted] = useState(false)
@@ -216,7 +304,7 @@ export default function BookingForm({ tipo = 'generico', lang = 'en' }: BookingF
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-5">
+    <form onSubmit={handleSubmit} noValidate className="space-y-5" dir={dir}>
       {/* Nome + Telefono */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>

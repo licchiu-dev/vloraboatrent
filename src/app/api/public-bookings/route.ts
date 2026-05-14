@@ -1,4 +1,5 @@
 import { createBooking } from '@/lib/bookings'
+import { notifyPublicBooking } from '@/lib/notifications'
 
 export async function POST(request: Request) {
   const body = await request.json()
@@ -28,5 +29,17 @@ export async function POST(request: Request) {
     notes: body.note,
     createdBy: 'WEBSITE',
   })
+
+  await notifyPublicBooking({
+    bookingId: booking.id,
+    tipo: body.tipo,
+    nome: body.nome,
+    email: body.email,
+    telefono: body.telefono,
+    data: body.data,
+    fascia: body.fascia,
+    note: body.note,
+  })
+
   return Response.json(booking)
 }

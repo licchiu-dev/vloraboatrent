@@ -12,16 +12,17 @@ export async function PATCH(request: Request) {
   const body = await request.json()
 
   if (body.partnerId && body.productId) {
+    const hasFixedNetPrice = body.fixedNetPrice != null
     const price = await prisma.partnerPrice.upsert({
       where: { partnerId_productId: { partnerId: body.partnerId, productId: body.productId } },
       update: {
-        commissionPct: body.fixedNetPrice ? null : body.commissionPct,
+        commissionPct: hasFixedNetPrice ? null : body.commissionPct,
         fixedNetPrice: body.fixedNetPrice,
       },
       create: {
         partnerId: body.partnerId,
         productId: body.productId,
-        commissionPct: body.fixedNetPrice ? null : body.commissionPct,
+        commissionPct: hasFixedNetPrice ? null : body.commissionPct,
         fixedNetPrice: body.fixedNetPrice,
       },
     })
@@ -30,7 +31,13 @@ export async function PATCH(request: Request) {
 
   const product = await prisma.product.update({
     where: { id: body.id },
-    data: { basePrice: body.basePrice, active: body.active, name: body.name, description: body.description },
+    data: {
+      basePrice: body.basePrice,
+      active: body.active,
+      name: body.name,
+      category: body.category,
+      description: body.description,
+    },
   })
   return Response.json(product)
 }

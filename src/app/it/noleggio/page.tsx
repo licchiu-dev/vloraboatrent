@@ -1,10 +1,13 @@
+import { ProductCategory } from '@prisma/client'
 import PublicRental from '@/components/public/PublicRental'
+import { formatEuroPrice, getMinimumProductPrice } from '@/lib/public-pricing'
 
 export const metadata = {
   title: 'Noleggio Gommoni — VLORA RENT A BOAT',
   description: 'Noleggia un gommone senza patente e scopri le calette più belle di Valona.',
 }
 
-export default function ItalianRentalPage() {
-  return <PublicRental lang="it" />
+export default async function ItalianRentalPage() {
+  const startingPrice = formatEuroPrice(await getMinimumProductPrice(ProductCategory.NOLEGGIO))
+  return <PublicRental lang="it" startingPrice={startingPrice} />
 }

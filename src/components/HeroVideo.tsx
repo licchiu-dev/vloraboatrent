@@ -1,3 +1,7 @@
+'use client'
+
+import { useEffect, useRef } from 'react'
+
 interface HeroVideoProps {
   title: React.ReactNode
   subtitle: string
@@ -13,6 +17,20 @@ export default function HeroVideo({
   ctaScrollTo = 'prenota',
   videoSrc = '/videos/hero.mp4',
 }: HeroVideoProps) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+
+    video.muted = true
+    video.defaultMuted = true
+    video.playsInline = true
+    video.play().catch(() => {
+      // Some mobile browsers block autoplay in low-power or data-saving modes.
+    })
+  }, [])
+
   return (
     <section
       className="relative min-h-screen flex items-center justify-center overflow-hidden"
@@ -21,12 +39,15 @@ export default function HeroVideo({
       }}
     >
       <video
+        ref={videoRef}
         className="absolute inset-0 h-full w-full object-cover"
         autoPlay
         muted
         loop
         playsInline
-        preload="metadata"
+        preload="auto"
+        aria-hidden="true"
+        onCanPlay={() => videoRef.current?.play().catch(() => undefined)}
       >
         <source src={videoSrc} type="video/mp4" />
       </video>

@@ -1,7 +1,7 @@
 import PublicRental from '@/components/public/PublicRental'
 
 export const metadata = {
-  title: 'Noleggio Gommoni — Valona Fishing',
+  title: 'Noleggio Gommoni — VLORA RENT A BOAT',
   description: 'Noleggia un gommone senza patente e scopri le calette più belle di Valona.',
 }
 

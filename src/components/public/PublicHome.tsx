@@ -7,6 +7,7 @@ import {
   Fish,
   MapPin,
   Package,
+  ShipWheel,
   Umbrella,
   UserCheck,
   Users,
@@ -242,20 +243,24 @@ export default function PublicHome({ lang }: { lang: Lang }) {
         </div>
       </section>
 
-      <section className="py-24 px-6" style={{ background: 'linear-gradient(135deg, #0A3D62 0%, #1678C2 50%, #0096C7 100%)' }}>
+      <section id="prenota" className="scroll-mt-24 py-24 px-6" style={{ background: 'linear-gradient(135deg, #0A3D62 0%, #1678C2 50%, #0096C7 100%)' }}>
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-4">{t.ready}</h2>
           <p className="text-white/70 text-xl mb-12">{t.readySub}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
             <Link href={href(lang, 'rental')} className="flex items-center gap-4 bg-sand hover:bg-sand-dark text-ocean-deep font-bold px-8 py-5 rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-sand/30">
-              <span className="text-3xl flex-shrink-0">⛵</span>
+              <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-ocean-deep/10 text-ocean-deep">
+                <ShipWheel size={28} strokeWidth={2.4} />
+              </span>
               <div className="text-left">
                 <div className="font-black text-lg leading-tight">{t.boatTitle}</div>
                 <div className="text-sm font-medium opacity-60 mt-0.5">{t.availability}</div>
               </div>
             </Link>
             <Link href={href(lang, 'fishing')} className="flex items-center gap-4 bg-white/10 hover:bg-white/20 border-2 border-white/30 hover:border-white/60 text-white font-bold px-8 py-5 rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-              <span className="text-3xl flex-shrink-0">🎣</span>
+              <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-white/15 text-white">
+                <Fish size={28} strokeWidth={2.4} />
+              </span>
               <div className="text-left">
                 <div className="font-black text-lg leading-tight">{t.fishingTitle}</div>
                 <div className="text-sm font-medium opacity-60 mt-0.5">{t.availability}</div>

@@ -10,7 +10,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'Valona Fishing — Boat Rentals & Sea Experiences',
+  title: 'VLORA RENT A BOAT — Boat Rentals & Sea Experiences',
   description: 'License-free boat rentals and unforgettable fishing experiences in Vlore. Book now.',
 }
 

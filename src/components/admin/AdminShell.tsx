@@ -164,8 +164,12 @@ export default function AdminShell({
     <div className="min-h-screen bg-[#F4FAFD] text-[#0A1628]">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-[#D0E8F7] bg-white lg:block">
         <div className="flex h-16 items-center gap-2 border-b border-[#D0E8F7] px-6 font-black text-ocean-deep">
-          <span className="text-2xl">⚓</span>
-          Valona <span className="text-ocean-bright">Control</span>
+          <img
+            src="/images/nuovafoto-fronte.ai_4.png"
+            alt="VLORA RENT A BOAT"
+            className="h-9 w-9 rounded-full object-cover ring-1 ring-[#D0E8F7]"
+          />
+          <span className="text-sm leading-tight">VLORA RENT A BOAT</span>
         </div>
         <nav className="space-y-1 p-4">
           {links.map((link) => {
@@ -194,7 +198,7 @@ export default function AdminShell({
         <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between border-b border-[#D0E8F7] bg-white/90 px-5 backdrop-blur">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-[#8AACCC]">{mode === 'partner' ? t.partnerArea : t.adminArea}</p>
-            <p className="font-black text-ocean-deep">{session?.user?.name ?? 'Valona Fishing'}</p>
+            <p className="font-black text-ocean-deep">{session?.user?.name ?? 'VLORA RENT A BOAT'}</p>
           </div>
           <div className="flex items-center gap-3">
             <label className="hidden items-center gap-2 text-xs font-bold text-[#4A6580] sm:flex">

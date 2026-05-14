@@ -99,11 +99,13 @@ export default function Navbar() {
     >
       <div className="max-w-6xl mx-auto px-6 flex items-center justify-between" dir={dir}>
 
-        {/* Logo */}
-        {/* TODO: Sostituire il testo con un logo immagine reale */}
-        <Link href={localizedPath(lang, 'home')} className="flex items-center gap-2 text-white font-black text-xl tracking-tight">
-          <span className="text-2xl">⚓</span>
-          <span>Valona <span className="text-sand">Fishing</span></span>
+        <Link href={localizedPath(lang, 'home')} className="flex items-center gap-3 text-white font-black tracking-tight">
+          <img
+            src="/images/nuovafoto-fronte.ai_4.png"
+            alt="VLORA RENT A BOAT"
+            className="h-10 w-10 rounded-full object-cover brightness-0 invert"
+          />
+          <span className="text-sm sm:text-base">VLORA RENT A BOAT</span>
         </Link>
 
         {/* Desktop links */}

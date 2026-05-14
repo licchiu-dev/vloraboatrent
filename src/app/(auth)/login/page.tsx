@@ -31,9 +31,13 @@ function LoginForm() {
       <div className="mx-auto flex min-h-[calc(100vh-6rem)] max-w-md items-center">
         <form onSubmit={submit} className="w-full rounded-lg bg-white p-8 text-[#0A1628] shadow-2xl">
           <div className="mb-8">
-            <div className="mb-3 text-3xl">⚓</div>
+            <img
+              src="/images/nuovafoto-fronte.ai_4.png"
+              alt="VLORA RENT A BOAT"
+              className="mb-3 h-14 w-14 rounded-full object-cover ring-1 ring-[#D0E8F7]"
+            />
             <h1 className="text-3xl font-black text-ocean-deep">Sign in</h1>
-            <p className="mt-2 text-[#4A6580]">Access the Valona Fishing admin and partner dashboard.</p>
+            <p className="mt-2 text-[#4A6580]">Access the VLORA RENT A BOAT admin and partner dashboard.</p>
           </div>
 
           <label className="mb-2 block text-sm font-bold text-ocean-deep">Email</label>

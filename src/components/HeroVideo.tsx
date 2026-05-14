@@ -3,6 +3,7 @@ interface HeroVideoProps {
   subtitle: string
   ctaText?: string
   ctaScrollTo?: string
+  videoSrc?: string
 }
 
 export default function HeroVideo({
@@ -10,6 +11,7 @@ export default function HeroVideo({
   subtitle,
   ctaText = 'Prenota ora',
   ctaScrollTo = 'prenota',
+  videoSrc = '/videos/hero.mov',
 }: HeroVideoProps) {
   return (
     <section
@@ -18,20 +20,17 @@ export default function HeroVideo({
         background: 'linear-gradient(160deg, #0A3D62 0%, #1678C2 30%, #00B4D8 60%, #48CAE4 80%, #90E0EF 100%)',
       }}
     >
-      {/*
-        TODO: Sostituire il gradiente con un video reale.
-        Aggiungere il file video in /public/videos/hero.mp4 e decommentare:
-
-        <video
-          className="absolute inset-0 w-full h-full object-cover"
-          src="/videos/hero.mp4"
-          autoPlay
-          muted
-          loop
-          playsInline
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-ocean-deep/60 via-ocean-deep/30 to-transparent" />
-      */}
+      <video
+        className="absolute inset-0 h-full w-full object-cover"
+        src={videoSrc}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="metadata"
+      />
+      <div className="absolute inset-0 bg-ocean-deep/70" />
+      <div className="absolute inset-0 bg-gradient-to-b from-ocean-deep/35 via-transparent to-ocean-deep/30" />
 
       {/* Animated gradient overlay */}
       <div
@@ -43,10 +42,6 @@ export default function HeroVideo({
       />
 
       <div className="relative z-10 text-center px-6 max-w-4xl mx-auto pt-24 pb-20">
-        <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm border border-white/25 text-white px-5 py-2 rounded-full text-sm font-semibold mb-8 tracking-wide">
-          🌊 Esperienze di mare autentiche
-        </div>
-
         <h1 className="text-5xl sm:text-6xl md:text-7xl font-black text-white leading-[1.05] tracking-tighter mb-6">
           {title}
         </h1>

@@ -11,7 +11,7 @@ export default function HeroVideo({
   subtitle,
   ctaText = 'Prenota ora',
   ctaScrollTo = 'prenota',
-  videoSrc = '/videos/hero.mov',
+  videoSrc = '/videos/hero.mp4',
 }: HeroVideoProps) {
   return (
     <section
@@ -22,13 +22,14 @@ export default function HeroVideo({
     >
       <video
         className="absolute inset-0 h-full w-full object-cover"
-        src={videoSrc}
         autoPlay
         muted
         loop
         playsInline
         preload="metadata"
-      />
+      >
+        <source src={videoSrc} type="video/mp4" />
+      </video>
       <div className="absolute inset-0 bg-ocean-deep/70" />
       <div className="absolute inset-0 bg-gradient-to-b from-ocean-deep/35 via-transparent to-ocean-deep/30" />
 
@@ -56,12 +57,6 @@ export default function HeroVideo({
         >
           {ctaText}
         </a>
-
-        {/* Scroll indicator */}
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/45 text-xs uppercase tracking-widest">
-          <span>Scorri</span>
-          <div className="w-px h-8 bg-gradient-to-b from-white/50 to-transparent animate-bounce" />
-        </div>
       </div>
 
       {/* Wave transition */}

@@ -226,8 +226,8 @@ export default function PublicHome({ lang }: { lang: Lang }) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <ServiceCard icon="⛵" badge={t.boatBadge} title={t.boatTitle} description={t.boatDescription} features={boatFeatures} ctaText={t.learnMore} ctaHref={href(lang, 'rental')} />
-            <ServiceCard icon="🎣" title={t.fishingTitle} description={t.fishingDescription} features={experienceFeatures} ctaText={t.learnMore} ctaHref={href(lang, 'fishing')} />
+            <ServiceCard icon="⛵" imageSrc="/images/noleggio.png" badge={t.boatBadge} title={t.boatTitle} description={t.boatDescription} features={boatFeatures} ctaText={t.learnMore} ctaHref={href(lang, 'rental')} />
+            <ServiceCard icon="🎣" imageSrc="/images/Spearfishing.png" title={t.fishingTitle} description={t.fishingDescription} features={experienceFeatures} ctaText={t.learnMore} ctaHref={href(lang, 'fishing')} />
           </div>
         </div>
       </section>

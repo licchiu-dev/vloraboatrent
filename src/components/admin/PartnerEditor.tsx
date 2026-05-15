@@ -20,6 +20,14 @@ type PartnerData = {
   discountCode: string
   defaultCommission: number
   phone: string | null
+  contactName: string | null
+  address: string | null
+  city: string | null
+  zip: string | null
+  country: string | null
+  vatNumber: string | null
+  website: string | null
+  notes: string | null
   pendingEarnings: number
   payments: Payment[]
 }
@@ -45,6 +53,14 @@ export default function PartnerEditor({ partner }: { partner: PartnerData }) {
   const [code, setCode] = useState(partner.discountCode)
   const [commission, setCommission] = useState(partner.defaultCommission.toString())
   const [phone, setPhone] = useState(partner.phone ?? '')
+  const [contactName, setContactName] = useState(partner.contactName ?? '')
+  const [address, setAddress] = useState(partner.address ?? '')
+  const [city, setCity] = useState(partner.city ?? '')
+  const [zip, setZip] = useState(partner.zip ?? '')
+  const [country, setCountry] = useState(partner.country ?? '')
+  const [vatNumber, setVatNumber] = useState(partner.vatNumber ?? '')
+  const [website, setWebsite] = useState(partner.website ?? '')
+  const [partnerNotes, setPartnerNotes] = useState(partner.notes ?? '')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
   const [isError, setIsError] = useState(false)
@@ -85,7 +101,10 @@ export default function PartnerEditor({ partner }: { partner: PartnerData }) {
     const res = await fetch(`/api/partners/${partner.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ companyName, email, type, discountCode: code, defaultCommission: commission, phone }),
+      body: JSON.stringify({
+        companyName, email, type, discountCode: code, defaultCommission: commission,
+        phone, contactName, address, city, zip, country, vatNumber, website, notes: partnerNotes,
+      }),
     })
     setSaving(false)
     if (!res.ok) { setIsError(true); setMessage('Save failed.'); return }
@@ -187,18 +206,12 @@ export default function PartnerEditor({ partner }: { partner: PartnerData }) {
       {/* Edit info */}
       <Card>
         <h2 className="mb-4 text-xl font-black text-ocean-deep">Edit partner</h2>
-        <div className="grid gap-3">
-          <label className="flex flex-col text-sm font-bold text-ocean-deep">
+
+        <p className="mb-3 text-xs font-bold uppercase tracking-widest text-[#8AACCC]">Commercial</p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="flex flex-col text-sm font-bold text-ocean-deep sm:col-span-2">
             Company name
             <input className={inputClass} value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
-          </label>
-          <label className="flex flex-col text-sm font-bold text-ocean-deep">
-            Email
-            <input type="email" className={inputClass} value={email} onChange={(e) => setEmail(e.target.value)} />
-          </label>
-          <label className="flex flex-col text-sm font-bold text-ocean-deep">
-            Phone
-            <input className={inputClass} value={phone} onChange={(e) => setPhone(e.target.value)} />
           </label>
           <label className="flex flex-col text-sm font-bold text-ocean-deep">
             Type
@@ -213,12 +226,57 @@ export default function PartnerEditor({ partner }: { partner: PartnerData }) {
             Discount code
             <input className={inputClass} value={code} onChange={(e) => setCode(e.target.value)} />
           </label>
-          <label className="flex flex-col text-sm font-bold text-ocean-deep">
+          <label className="flex flex-col text-sm font-bold text-ocean-deep sm:col-span-2">
             Default commission %
             <input type="number" min={0} max={100} step="0.1" className={inputClass} value={commission} onChange={(e) => setCommission(e.target.value)} />
             <span className="mt-1 text-xs font-normal text-[#4A6580]">Partner net = public × (1 − {commission}%)</span>
           </label>
         </div>
+
+        <p className="mb-3 mt-5 text-xs font-bold uppercase tracking-widest text-[#8AACCC]">Anagrafica</p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="flex flex-col text-sm font-bold text-ocean-deep">
+            Contact person
+            <input className={inputClass} placeholder="Name surname" value={contactName} onChange={(e) => setContactName(e.target.value)} />
+          </label>
+          <label className="flex flex-col text-sm font-bold text-ocean-deep">
+            Email
+            <input type="email" className={inputClass} value={email} onChange={(e) => setEmail(e.target.value)} />
+          </label>
+          <label className="flex flex-col text-sm font-bold text-ocean-deep">
+            Phone
+            <input className={inputClass} value={phone} onChange={(e) => setPhone(e.target.value)} />
+          </label>
+          <label className="flex flex-col text-sm font-bold text-ocean-deep">
+            Website
+            <input className={inputClass} placeholder="https://…" value={website} onChange={(e) => setWebsite(e.target.value)} />
+          </label>
+          <label className="flex flex-col text-sm font-bold text-ocean-deep sm:col-span-2">
+            Address
+            <input className={inputClass} placeholder="Via/Piazza, number" value={address} onChange={(e) => setAddress(e.target.value)} />
+          </label>
+          <label className="flex flex-col text-sm font-bold text-ocean-deep">
+            City
+            <input className={inputClass} value={city} onChange={(e) => setCity(e.target.value)} />
+          </label>
+          <label className="flex flex-col text-sm font-bold text-ocean-deep">
+            ZIP / CAP
+            <input className={inputClass} value={zip} onChange={(e) => setZip(e.target.value)} />
+          </label>
+          <label className="flex flex-col text-sm font-bold text-ocean-deep">
+            Country
+            <input className={inputClass} placeholder="Italy" value={country} onChange={(e) => setCountry(e.target.value)} />
+          </label>
+          <label className="flex flex-col text-sm font-bold text-ocean-deep">
+            VAT / P.IVA
+            <input className={inputClass} placeholder="IT12345678901" value={vatNumber} onChange={(e) => setVatNumber(e.target.value)} />
+          </label>
+          <label className="flex flex-col text-sm font-bold text-ocean-deep sm:col-span-2">
+            Internal notes
+            <textarea rows={2} className={inputClass} placeholder="Any internal note about this partner…" value={partnerNotes} onChange={(e) => setPartnerNotes(e.target.value)} />
+          </label>
+        </div>
+
         <div className="mt-4 flex items-center gap-3">
           <button type="button" onClick={save} disabled={saving}
             className="rounded-full bg-ocean-deep px-5 py-2.5 text-sm font-black text-white disabled:opacity-60">

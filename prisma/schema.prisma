@@ -75,6 +75,14 @@ model Partner {
   partnerPrices     PartnerPrice[]
   payments          CommissionPayment[]
   phone             String?
+  contactName       String?
+  address           String?
+  city              String?
+  zip               String?
+  country           String?
+  vatNumber         String?
+  website           String?
+  notes             String?
   createdAt         DateTime             @default(now())
 }
 

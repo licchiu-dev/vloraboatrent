@@ -156,8 +156,21 @@ export default async function PartnerDetail({ params }: { params: Promise<{ id: 
 
         {canEdit ? (
           <PartnerEditor partner={{
-            ...partner,
+            id: partner.id,
+            companyName: partner.companyName,
             email: partner.user.email,
+            type: partner.type,
+            discountCode: partner.discountCode,
+            defaultCommission: partner.defaultCommission,
+            phone: partner.phone,
+            contactName: partner.contactName,
+            address: partner.address,
+            city: partner.city,
+            zip: partner.zip,
+            country: partner.country,
+            vatNumber: partner.vatNumber,
+            website: partner.website,
+            notes: partner.notes,
             pendingEarnings,
             payments: partner.payments.map((p) => ({ ...p, date: p.date.toISOString() })),
           }} />

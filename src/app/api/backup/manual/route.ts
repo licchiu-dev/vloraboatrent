@@ -1,27 +1,26 @@
 import { generateAllCSVs } from '@/lib/backup'
+import { apiRequireRole } from '@/lib/guards'
 import { prisma } from '@/lib/prisma'
 
-export async function GET(request: Request) {
-  const expected = `Bearer ${process.env.CRON_SECRET}`
-  if (!process.env.CRON_SECRET || request.headers.get('authorization') !== expected) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+export async function POST(request: Request) {
+  const guard = await apiRequireRole(['SUPERADMIN'])
+  if ('error' in guard) return guard.error
 
   try {
     const files = await generateAllCSVs()
-    await prisma.backupLog.create({
+    const log = await prisma.backupLog.create({
       data: {
-        type: 'AUTO',
+        type: 'MANUAL',
         status: 'SUCCESS',
         files: files.map((f) => f.filename),
         snapshot: { files: files.map((f) => ({ filename: f.filename, content: f.content })) },
       },
     })
-    return Response.json({ ok: true, files: files.map((f) => f.filename) })
+    return Response.json({ ok: true, id: log.id, files: files.map((f) => f.filename) })
   } catch (error) {
     await prisma.backupLog.create({
       data: {
-        type: 'AUTO',
+        type: 'MANUAL',
         status: 'ERROR',
         files: [],
         error: error instanceof Error ? error.message : 'Unknown error',

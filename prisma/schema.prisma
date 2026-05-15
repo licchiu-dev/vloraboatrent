@@ -189,10 +189,11 @@ model Expense {
 }
 
 model BackupLog {
-  id     String   @id @default(cuid())
-  date   DateTime @default(now())
-  type   String
-  status String
-  files  String[]
-  error  String?
+  id       String   @id @default(cuid())
+  date     DateTime @default(now())
+  type     String
+  status   String
+  files    String[]
+  error    String?
+  snapshot Json?    // stores {files:[{filename,content}]} for per-backup download
 }

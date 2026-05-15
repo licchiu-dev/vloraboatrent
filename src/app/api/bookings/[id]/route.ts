@@ -3,10 +3,31 @@ import { prisma } from '@/lib/prisma'
 import { roundMoney } from '@/lib/pricing'
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const guard = await apiRequireRole(['SUPERADMIN', 'ADMIN'])
+  const guard = await apiRequireRole(['SUPERADMIN', 'ADMIN', 'PARTNER'])
   if ('error' in guard) return guard.error
   const { id } = await params
   const body = await request.json()
+  const isPartner = guard.session.user.role === 'PARTNER'
+
+  // Partners can only edit bookings that belong to them
+  if (isPartner) {
+    const booking = await prisma.booking.findUnique({ where: { id }, select: { partnerId: true } })
+    if (!booking || booking.partnerId !== guard.session.user.partnerId) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    const updated = await prisma.booking.update({
+      where: { id },
+      data: {
+        date: body.date ? new Date(body.date) : undefined,
+        timeSlot: body.timeSlot,
+        notes: body.notes !== undefined ? (body.notes || null) : undefined,
+        status: body.status,
+      },
+    })
+    return Response.json(updated)
+  }
+
+  // --- SUPERADMIN / ADMIN below ---
 
   if (Array.isArray(body.items)) {
     const existingItems = await prisma.bookingItem.findMany({

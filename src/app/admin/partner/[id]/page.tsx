@@ -2,10 +2,13 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Card, PageHeader } from '@/components/admin/Ui'
 import PartnerEditor from '@/components/admin/PartnerEditor'
+import { requireRole } from '@/lib/guards'
 import { prisma } from '@/lib/prisma'
 import { calcPartnerPrice, calcCommission } from '@/lib/pricing'
 
 export default async function PartnerDetail({ params }: { params: Promise<{ id: string }> }) {
+  const session = await requireRole(['SUPERADMIN', 'ADMIN'])
+  const canEdit = session.user.role === 'SUPERADMIN'
   const { id } = await params
   const [partner, products] = await Promise.all([
     prisma.partner.findUnique({
@@ -119,7 +122,14 @@ export default async function PartnerDetail({ params }: { params: Promise<{ id: 
           </Card>
         </div>
 
-        <PartnerEditor partner={{ ...partner, email: partner.user.email }} />
+        {canEdit ? (
+          <PartnerEditor partner={{ ...partner, email: partner.user.email }} />
+        ) : (
+          <div className="rounded-lg border border-[#D0E8F7] bg-white p-5 shadow-sm">
+            <p className="text-xs font-bold uppercase tracking-widest text-[#8AACCC]">Read-only</p>
+            <p className="mt-2 text-sm text-[#4A6580]">Only superadmins can edit partner settings.</p>
+          </div>
+        )}
       </div>
     </>
   )

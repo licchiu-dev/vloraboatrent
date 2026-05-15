@@ -111,8 +111,8 @@ const shellCopy = {
   },
 }
 
-function adminLinks(t: typeof shellCopy.en) {
-  return [
+function adminLinks(t: typeof shellCopy.en, role?: string) {
+  const all = [
     { href: '/admin', label: t.dashboard, icon: BarChart3 },
     { href: '/admin/prenotazioni', label: t.bookings, icon: CalendarDays },
     { href: '/admin/flotta', label: t.fleet, icon: ShipWheel },
@@ -121,6 +121,10 @@ function adminLinks(t: typeof shellCopy.en) {
     { href: '/admin/prodotti', label: t.products, icon: Package },
     { href: '/admin/impostazioni', label: t.settings, icon: DatabaseBackup },
   ]
+  if (role === 'ADMIN') {
+    return all.filter((l) => l.href !== '/admin/prodotti' && l.href !== '/admin/impostazioni')
+  }
+  return all
 }
 
 function partnerLinks(t: typeof shellCopy.en) {
@@ -143,7 +147,8 @@ export default function AdminShell({
   const { data: session } = useSession()
   const [lang, setLang] = useState<AdminLang>('en')
   const t = shellCopy[lang]
-  const links = mode === 'partner' ? partnerLinks(t) : adminLinks(t)
+  const role = session?.user?.role
+  const links = mode === 'partner' ? partnerLinks(t) : adminLinks(t, role)
 
   useEffect(() => {
     const saved = window.localStorage.getItem('valona-admin-lang') as AdminLang | null

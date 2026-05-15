@@ -12,6 +12,7 @@ type Props = {
   notes: string | null
   internalNotes: string | null
   createdBy: string
+  showInternalNotes?: boolean
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -35,6 +36,7 @@ export default function BookingCoreEditor({
   notes,
   internalNotes,
   createdBy,
+  showInternalNotes = true,
 }: Props) {
   const router = useRouter()
   const [name, setName] = useState(customer.name)
@@ -65,7 +67,7 @@ export default function BookingCoreEditor({
           date: bookingDate,
           timeSlot: slot,
           notes: customerNotes,
-          internalNotes: internal,
+          ...(showInternalNotes ? { internalNotes: internal } : {}),
         }),
       }),
     ])
@@ -116,7 +118,7 @@ export default function BookingCoreEditor({
             </select>
           </Field>
         </div>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <div className={`mt-3 grid gap-3 ${showInternalNotes ? 'sm:grid-cols-2' : ''}`}>
           <Field label="Customer notes">
             <textarea
               rows={3}
@@ -126,15 +128,17 @@ export default function BookingCoreEditor({
               placeholder="No customer notes."
             />
           </Field>
-          <Field label="Internal notes">
-            <textarea
-              rows={3}
-              className={inputClass}
-              value={internal}
-              onChange={(e) => setInternal(e.target.value)}
-              placeholder="No internal notes."
-            />
-          </Field>
+          {showInternalNotes && (
+            <Field label="Internal notes">
+              <textarea
+                rows={3}
+                className={inputClass}
+                value={internal}
+                onChange={(e) => setInternal(e.target.value)}
+                placeholder="No internal notes."
+              />
+            </Field>
+          )}
         </div>
         <p className="mt-2 text-xs text-[#4A6580]">Created by {createdBy}</p>
       </div>

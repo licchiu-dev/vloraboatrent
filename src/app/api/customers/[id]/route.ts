@@ -2,7 +2,7 @@ import { apiRequireRole } from '@/lib/guards'
 import { prisma } from '@/lib/prisma'
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const guard = await apiRequireRole(['SUPERADMIN', 'ADMIN'])
+  const guard = await apiRequireRole(['SUPERADMIN', 'ADMIN', 'PARTNER'])
   if ('error' in guard) return guard.error
   const { id } = await params
   const body = await request.json()

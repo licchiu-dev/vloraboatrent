@@ -1,9 +1,13 @@
 import Link from 'next/link'
 import { Card, PageHeader } from '@/components/admin/Ui'
 import PartnersTable, { type PartnerRow } from '@/components/admin/PartnersTable'
+import { requireRole } from '@/lib/guards'
 import { prisma } from '@/lib/prisma'
 
 export default async function PartnersPage() {
+  const session = await requireRole(['SUPERADMIN', 'ADMIN'])
+  const canCreate = session.user.role === 'SUPERADMIN'
+
   const partners = await prisma.partner.findMany({
     include: { user: true, bookings: true },
     orderBy: { companyName: 'asc' },
@@ -25,9 +29,11 @@ export default async function PartnersPage() {
         title="Partners"
         subtitle="Filter by column, click any header to sort."
         action={
-          <Link href="/admin/partner/nuova" className="rounded-full bg-sand px-5 py-3 font-black text-ocean-deep">
-            New partner
-          </Link>
+          canCreate ? (
+            <Link href="/admin/partner/nuova" className="rounded-full bg-sand px-5 py-3 font-black text-ocean-deep">
+              New partner
+            </Link>
+          ) : undefined
         }
       />
       <Card>

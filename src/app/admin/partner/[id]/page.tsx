@@ -10,7 +10,8 @@ export default async function PartnerDetail({ params }: { params: Promise<{ id: 
   const session = await requireRole(['SUPERADMIN', 'ADMIN'])
   const canEdit = session.user.role === 'SUPERADMIN'
   const { id } = await params
-  const [partner, products] = await Promise.all([
+
+  const [partner, products, earningsAgg, paidAgg] = await Promise.all([
     prisma.partner.findUnique({
       where: { id },
       include: {
@@ -28,12 +29,30 @@ export default async function PartnerDetail({ params }: { params: Promise<{ id: 
       include: { partnerPrices: { where: { partnerId: id } } },
       orderBy: [{ category: 'asc' }, { name: 'asc' }],
     }),
+    // Real-time aggregation — not affected by stale stored values
+    prisma.booking.aggregate({
+      where: { partnerId: id, status: { in: ['CONFIRMED', 'COMPLETED'] } },
+      _sum: { commission: true, totalPublic: true },
+      _count: { id: true },
+    }),
+    prisma.commissionPayment.aggregate({
+      where: { partnerId: id },
+      _sum: { amount: true },
+    }),
   ])
   if (!partner) notFound()
 
-  const totalRevenue = partner.bookings
-    .filter((b) => ['CONFIRMED', 'COMPLETED'].includes(b.status))
-    .reduce((sum, b) => sum + (b.totalPublic ?? 0), 0)
+  const totalBookings = earningsAgg._count.id
+  const totalRevenue = earningsAgg._sum.totalPublic ?? 0
+  const totalEarnings = earningsAgg._sum.commission ?? 0
+  const totalPaid = paidAgg._sum.amount ?? 0
+  const pendingEarnings = Math.max(0, totalEarnings - totalPaid)
+
+  // Keep stored values in sync without blocking the render
+  void prisma.partner.update({
+    where: { id },
+    data: { totalEarnings, pendingEarnings },
+  }).catch(() => {})
 
   return (
     <>
@@ -48,10 +67,22 @@ export default async function PartnerDetail({ params }: { params: Promise<{ id: 
       />
 
       <div className="grid gap-4 md:grid-cols-4">
-        <Card><p className="text-sm font-bold text-[#4A6580]">Total bookings</p><p className="mt-2 text-3xl font-black text-ocean-deep">{partner.bookings.length}</p></Card>
-        <Card><p className="text-sm font-bold text-[#4A6580]">Revenue generated</p><p className="mt-2 text-3xl font-black text-ocean-deep">€{totalRevenue.toFixed(0)}</p></Card>
-        <Card><p className="text-sm font-bold text-[#4A6580]">Total commission</p><p className="mt-2 text-3xl font-black text-ocean-deep">€{partner.totalEarnings.toFixed(0)}</p></Card>
-        <Card><p className="text-sm font-bold text-[#4A6580]">Pending payment</p><p className="mt-2 text-3xl font-black text-ocean-deep">€{partner.pendingEarnings.toFixed(0)}</p></Card>
+        <Card>
+          <p className="text-sm font-bold text-[#4A6580]">Total bookings</p>
+          <p className="mt-2 text-3xl font-black text-ocean-deep">{totalBookings}</p>
+        </Card>
+        <Card>
+          <p className="text-sm font-bold text-[#4A6580]">Revenue generated</p>
+          <p className="mt-2 text-3xl font-black text-ocean-deep">€{totalRevenue.toFixed(0)}</p>
+        </Card>
+        <Card>
+          <p className="text-sm font-bold text-[#4A6580]">Total commission</p>
+          <p className="mt-2 text-3xl font-black text-ocean-deep">€{totalEarnings.toFixed(0)}</p>
+        </Card>
+        <Card>
+          <p className="text-sm font-bold text-[#4A6580]">Pending payment</p>
+          <p className="mt-2 text-3xl font-black text-ocean-deep">€{pendingEarnings.toFixed(0)}</p>
+        </Card>
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_22rem]">
@@ -127,6 +158,7 @@ export default async function PartnerDetail({ params }: { params: Promise<{ id: 
           <PartnerEditor partner={{
             ...partner,
             email: partner.user.email,
+            pendingEarnings,
             payments: partner.payments.map((p) => ({ ...p, date: p.date.toISOString() })),
           }} />
         ) : (

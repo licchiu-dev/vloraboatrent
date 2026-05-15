@@ -13,17 +13,33 @@ const METHOD_LABELS: Record<string, string> = {
 
 export default async function PartnerDashboard() {
   const session = await requireRole(['PARTNER'])
-  const partner = await prisma.partner.findUnique({
-    where: { id: session.user.partnerId },
-    include: {
-      bookings: {
-        include: { customer: true, items: { include: { product: true } } },
-        orderBy: { date: 'desc' },
-        take: 5,
+  const [partner, earningsAgg, paidAgg] = await Promise.all([
+    prisma.partner.findUnique({
+      where: { id: session.user.partnerId },
+      include: {
+        bookings: {
+          include: { customer: true, items: { include: { product: true } } },
+          orderBy: { date: 'desc' },
+          take: 5,
+        },
+        payments: { orderBy: { date: 'desc' }, take: 20 },
       },
-      payments: { orderBy: { date: 'desc' }, take: 20 },
-    },
-  })
+    }),
+    prisma.booking.aggregate({
+      where: { partnerId: session.user.partnerId, status: { in: ['CONFIRMED', 'COMPLETED'] } },
+      _sum: { commission: true },
+      _count: { id: true },
+    }),
+    prisma.commissionPayment.aggregate({
+      where: { partnerId: session.user.partnerId },
+      _sum: { amount: true },
+    }),
+  ])
+
+  const totalBookings = earningsAgg._count.id
+  const totalEarnings = earningsAgg._sum.commission ?? 0
+  const totalPaid = paidAgg._sum.amount ?? 0
+  const pendingEarnings = Math.max(0, totalEarnings - totalPaid)
 
   return (
     <>
@@ -47,15 +63,15 @@ export default async function PartnerDashboard() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <p className="text-sm font-bold text-[#4A6580]">Total bookings</p>
-          <p className="mt-2 text-3xl font-black text-ocean-deep">{partner?.bookings.length ?? 0}</p>
+          <p className="mt-2 text-3xl font-black text-ocean-deep">{totalBookings}</p>
         </Card>
         <Card>
           <p className="text-sm font-bold text-[#4A6580]">Total earnings</p>
-          <p className="mt-2 text-3xl font-black text-ocean-deep">€{partner?.totalEarnings.toFixed(2)}</p>
+          <p className="mt-2 text-3xl font-black text-ocean-deep">€{totalEarnings.toFixed(2)}</p>
         </Card>
         <Card>
           <p className="text-sm font-bold text-[#4A6580]">Pending payment</p>
-          <p className="mt-2 text-3xl font-black text-ocean-deep">€{partner?.pendingEarnings.toFixed(2)}</p>
+          <p className="mt-2 text-3xl font-black text-ocean-deep">€{pendingEarnings.toFixed(2)}</p>
         </Card>
       </div>
 

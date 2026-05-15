@@ -13,6 +13,13 @@ const BASE_URL = 'https://vloraboatrent.com'
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
+  icons: {
+    icon: [
+      { url: '/icon.png', type: 'image/png', sizes: '1024x1024' },
+      { url: '/favicon.ico', sizes: '32x32' },
+    ],
+    apple: '/apple-icon.png',
+  },
   title: {
     default: 'Vlora Boat Rent — Boat Rental & Fishing in Albania',
     template: '%s | Vlora Boat Rent',

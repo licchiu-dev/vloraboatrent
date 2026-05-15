@@ -1,9 +1,11 @@
 import { notFound } from 'next/navigation'
 import AssetAssignmentEditor from '@/components/admin/AssetAssignmentEditor'
+import BookingCoreEditor from '@/components/admin/BookingCoreEditor'
+import BookingEconomicsEditor from '@/components/admin/BookingEconomicsEditor'
 import BookingItemsEditor from '@/components/admin/BookingItemsEditor'
 import BookingStatusEditor from '@/components/admin/BookingStatusEditor'
 import DeleteBookingButton from '@/components/admin/DeleteBookingButton'
-import { Badge, Card, PageHeader } from '@/components/admin/Ui'
+import { Card, PageHeader } from '@/components/admin/Ui'
 import { prisma } from '@/lib/prisma'
 
 export default async function BookingDetail({ params }: { params: Promise<{ id: string }> }) {
@@ -16,52 +18,54 @@ export default async function BookingDetail({ params }: { params: Promise<{ id: 
 
   return (
     <>
-      <PageHeader title={`Booking ${booking.id.slice(0, 8)}`} subtitle="Editable detail, economics and internal notes." />
+      <PageHeader title={`Booking ${booking.id.slice(0, 8)}`} subtitle="Edit all booking details, economics and notes." />
       <div className="grid gap-6 xl:grid-cols-[1fr_22rem]">
         <Card>
-          <div className="grid gap-5 md:grid-cols-2">
-            <div>
-              <h2 className="text-xl font-black text-ocean-deep">Customer</h2>
-              <p className="mt-3 font-bold">{booking.customer.name}</p>
-              <p className="text-[#4A6580]">{booking.customer.email}</p>
-              <p className="text-[#4A6580]">{booking.customer.phone}</p>
-            </div>
-            <div>
-              <h2 className="text-xl font-black text-ocean-deep">Booking</h2>
-              <p className="mt-3">{booking.date.toLocaleDateString('en-GB')} · {booking.timeSlot}</p>
-              <p className="mt-2 text-sm text-[#4A6580]">Payment: {booking.paymentMethod}</p>
-              <p className="mt-2"><Badge>{booking.status}</Badge></p>
-              <p className="mt-3 text-sm text-[#4A6580]">Created by {booking.createdBy}</p>
-            </div>
-          </div>
-
-          <BookingItemsEditor bookingId={booking.id} initialItems={booking.items} />
-        </Card>
-
-        <Card>
-          <h2 className="text-xl font-black text-ocean-deep">Economics</h2>
-          <dl className="mt-4 space-y-3 text-sm">
-            <div className="flex justify-between"><dt>Public price</dt><dd className="font-black">€{booking.totalPublic?.toFixed(2)}</dd></div>
-            <div className="flex justify-between"><dt>Partner price</dt><dd className="font-black">€{booking.totalPartner?.toFixed(2) ?? '-'}</dd></div>
-            <div className="flex justify-between"><dt>Commission</dt><dd className="font-black">€{booking.commission?.toFixed(2) ?? '-'}</dd></div>
-            <div className="flex justify-between"><dt>Partner</dt><dd>{booking.partner?.companyName ?? 'Direct'}</dd></div>
-          </dl>
-          <div className="mt-6 rounded-lg bg-ocean-light p-4 text-sm text-[#4A6580]">
-            <p className="font-black text-ocean-deep">Notes</p>
-            <p className="mt-2">{booking.notes ?? 'No customer notes.'}</p>
-            <p className="mt-4 font-black text-ocean-deep">Internal notes</p>
-            <p className="mt-2">{booking.internalNotes ?? 'No internal notes.'}</p>
-          </div>
-          <BookingStatusEditor
+          <BookingCoreEditor
             bookingId={booking.id}
-            initialStatus={booking.status}
-            initialPaymentMethod={booking.paymentMethod}
+            customerId={booking.customerId}
+            customer={booking.customer}
+            date={booking.date}
+            timeSlot={booking.timeSlot}
+            notes={booking.notes}
+            internalNotes={booking.internalNotes}
+            createdBy={booking.createdBy}
           />
-          <AssetAssignmentEditor bookingId={booking.id} initialAssetIds={booking.fleetAssignments.map((assignment) => assignment.fleetAssetId)} />
-          <button className="mt-5 w-full rounded-full bg-ocean-deep px-4 py-3 font-black text-white">Send confirmation email</button>
-          <p className="mt-2 text-xs text-[#8AACCC]">// TODO: EMAIL</p>
-          <DeleteBookingButton bookingId={booking.id} />
+          <div className="mt-8 border-t border-[#D0E8F7] pt-6">
+            <BookingItemsEditor bookingId={booking.id} initialItems={booking.items} />
+          </div>
         </Card>
+
+        <div className="flex flex-col gap-6">
+          <Card>
+            <BookingEconomicsEditor
+              bookingId={booking.id}
+              totalPublic={booking.totalPublic}
+              totalPartner={booking.totalPartner}
+              commission={booking.commission}
+              partnerId={booking.partnerId}
+              partnerName={booking.partner?.companyName ?? null}
+              discountCode={booking.discountCode}
+            />
+          </Card>
+
+          <Card>
+            <BookingStatusEditor
+              bookingId={booking.id}
+              initialStatus={booking.status}
+              initialPaymentMethod={booking.paymentMethod}
+            />
+            <AssetAssignmentEditor
+              bookingId={booking.id}
+              initialAssetIds={booking.fleetAssignments.map((a) => a.fleetAssetId)}
+            />
+            <button className="mt-5 w-full rounded-full bg-ocean-deep px-4 py-3 font-black text-white">
+              Send confirmation email
+            </button>
+            <p className="mt-2 text-xs text-[#8AACCC]">// TODO: EMAIL</p>
+            <DeleteBookingButton bookingId={booking.id} />
+          </Card>
+        </div>
       </div>
     </>
   )

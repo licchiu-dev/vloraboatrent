@@ -52,10 +52,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     data: {
       status: body.status,
       paymentMethod: body.paymentMethod,
-      notes: body.notes,
-      internalNotes: body.internalNotes,
+      notes: body.notes !== undefined ? (body.notes || null) : undefined,
+      internalNotes: body.internalNotes !== undefined ? (body.internalNotes || null) : undefined,
       date: body.date ? new Date(body.date) : undefined,
       timeSlot: body.timeSlot,
+      totalPublic: body.totalPublic !== undefined ? Number(body.totalPublic) : undefined,
+      totalPartner: body.totalPartner !== undefined ? (body.totalPartner === '' || body.totalPartner === null ? null : Number(body.totalPartner)) : undefined,
+      commission: body.commission !== undefined ? (body.commission === '' || body.commission === null ? null : Number(body.commission)) : undefined,
+      partnerId: body.partnerId !== undefined ? (body.partnerId || null) : undefined,
+      discountCode: body.discountCode !== undefined ? (body.discountCode || null) : undefined,
     },
   })
   return Response.json(booking)

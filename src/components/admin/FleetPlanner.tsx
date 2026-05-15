@@ -137,6 +137,19 @@ export default function FleetPlanner({ canManageFleet }: { canManageFleet: boole
         </form>
       )}
 
+      {/* Legend */}
+      <div className="flex flex-wrap items-center gap-4 rounded-lg border border-[#D0E8F7] bg-white px-5 py-3 text-sm">
+        <span className="font-bold text-[#4A6580]">Legend:</span>
+        <span className="flex items-center gap-2">
+          <span className="inline-block h-4 w-8 rounded bg-ocean-deep" />
+          <span className="text-[#4A6580]">Confirmed</span>
+        </span>
+        <span className="flex items-center gap-2">
+          <span className="inline-block h-4 w-8 rounded border-2 border-ocean-deep bg-white" />
+          <span className="text-[#4A6580]">Pending</span>
+        </span>
+      </div>
+
       <div className="overflow-x-auto rounded-lg border border-[#D0E8F7] bg-white">
         <table className="min-w-[1100px] w-full text-sm">
           <thead>
@@ -154,15 +167,15 @@ export default function FleetPlanner({ canManageFleet }: { canManageFleet: boole
                 </th>
                 {days.map((day) => {
                   const assignment = asset.assignments.find((entry) => isoDate(new Date(entry.booking.date)) === isoDate(day))
+                  if (!assignment) return <td key={isoDate(day)} className="border-l border-[#E8F3FA] p-2 align-top" />
+                  const isPending = assignment.booking.status === 'PENDING'
                   return (
                     <td key={isoDate(day)} className="border-l border-[#E8F3FA] p-2 align-top">
-                      {assignment && (
-                        <div className="rounded-lg bg-ocean-deep p-2 text-xs text-white">
-                          <p className="font-black">{assignment.booking.customer.name}</p>
-                          <p>{assignment.booking.items.map((item) => item.product.name).join(', ')}</p>
-                          <p className="mt-1 text-white/75">Payment: {assignment.booking.paymentMethod}</p>
-                        </div>
-                      )}
+                      <div className={`rounded-lg border-2 p-2 text-xs ${isPending ? 'border-ocean-deep bg-white text-ocean-deep' : 'border-ocean-deep bg-ocean-deep text-white'}`}>
+                        <p className="font-black">{assignment.booking.customer.name}</p>
+                        <p className={isPending ? 'text-ocean-mid' : ''}>{assignment.booking.items.map((item) => item.product.name).join(', ')}</p>
+                        <p className={`mt-1 ${isPending ? 'text-[#4A6580]' : 'text-white/75'}`}>Payment: {assignment.booking.paymentMethod}</p>
+                      </div>
                     </td>
                   )
                 })}

@@ -15,6 +15,7 @@ import {
   WalletCards,
 } from 'lucide-react'
 
+
 type AdminLang = 'en' | 'it' | 'sq' | 'ar' | 'ru' | 'zh'
 
 const shellCopy = {
@@ -25,8 +26,6 @@ const shellCopy = {
     customers: 'Customers',
     partners: 'Partners',
     products: 'Products',
-    suppliers: 'Suppliers',
-    analytics: 'Analytics',
     settings: 'Settings',
     myBookings: 'My bookings',
     newBooking: 'New booking',
@@ -42,8 +41,6 @@ const shellCopy = {
     customers: 'Clienti',
     partners: 'Partner',
     products: 'Prodotti',
-    suppliers: 'Fornitori',
-    analytics: 'Statistiche',
     settings: 'Impostazioni',
     myBookings: 'Le mie prenotazioni',
     newBooking: 'Nuova prenotazione',
@@ -59,8 +56,6 @@ const shellCopy = {
     customers: 'Klientë',
     partners: 'Partnerë',
     products: 'Produkte',
-    suppliers: 'Furnitorë',
-    analytics: 'Statistika',
     settings: 'Cilësime',
     myBookings: 'Rezervimet e mia',
     newBooking: 'Rezervim i ri',
@@ -76,8 +71,6 @@ const shellCopy = {
     customers: 'العملاء',
     partners: 'الشركاء',
     products: 'المنتجات',
-    suppliers: 'الموردون',
-    analytics: 'الإحصاءات',
     settings: 'الإعدادات',
     myBookings: 'حجوزاتي',
     newBooking: 'حجز جديد',
@@ -93,8 +86,6 @@ const shellCopy = {
     customers: 'Клиенты',
     partners: 'Партнеры',
     products: 'Продукты',
-    suppliers: 'Поставщики',
-    analytics: 'Аналитика',
     settings: 'Настройки',
     myBookings: 'Мои бронирования',
     newBooking: 'Новое бронирование',
@@ -110,8 +101,6 @@ const shellCopy = {
     customers: '客户',
     partners: '合作伙伴',
     products: '产品',
-    suppliers: '供应商',
-    analytics: '统计',
     settings: '设置',
     myBookings: '我的预订',
     newBooking: '新预订',
@@ -130,8 +119,6 @@ function adminLinks(t: typeof shellCopy.en) {
     { href: '/admin/clienti', label: t.customers, icon: Users },
     { href: '/admin/partner', label: t.partners, icon: WalletCards },
     { href: '/admin/prodotti', label: t.products, icon: Package },
-    { href: '/admin/fornitori', label: t.suppliers, icon: ShipWheel },
-    { href: '/admin/statistiche', label: t.analytics, icon: BarChart3 },
     { href: '/admin/impostazioni', label: t.settings, icon: DatabaseBackup },
   ]
 }

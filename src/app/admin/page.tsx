@@ -1,114 +1,184 @@
-import { Card, Badge, PageHeader } from '@/components/admin/Ui'
-import { demoBookings, isDemoMode } from '@/lib/demo'
+import Link from 'next/link'
+import { Badge, Card, PageHeader } from '@/components/admin/Ui'
 import { prisma } from '@/lib/prisma'
 
+const SEASON_MONTHS = [
+  { index: 5, label: 'Jun' },
+  { index: 6, label: 'Jul' },
+  { index: 7, label: 'Aug' },
+  { index: 8, label: 'Sep' },
+  { index: 9, label: 'Oct' },
+  { index: 10, label: 'Nov' },
+]
+
+function baseName(name: string) {
+  return name.replace(/ - (Mezza giornata|Giornata intera)$/i, '').trim()
+}
+
 export default async function AdminDashboard() {
-  if (isDemoMode()) {
-    const today = demoBookings.filter((booking) => booking.date.toDateString() === new Date().toDateString()).length
-    const pending = demoBookings.filter((booking) => booking.status === 'PENDING').length
-    const revenue = demoBookings
-      .filter((booking) => ['CONFIRMED', 'COMPLETED'].includes(booking.status))
-      .reduce((sum, booking) => sum + (booking.totalPublic ?? 0), 0)
+  const year = new Date().getFullYear()
+  const monthStart = new Date(year, new Date().getMonth(), 1)
+  const seasonStart = new Date(year, 5, 1)
+  const seasonEnd = new Date(year, 11, 1)
 
-    return (
-      <>
-        <PageHeader title="Dashboard" subtitle="Demo admin preview. Add DATABASE_URL, migrate and seed to use real data." />
-        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-900">
-          Demo mode: PostgreSQL is not configured yet, so this screen uses sample data.
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-          {[
-            ['Bookings today', today],
-            ['Last 7 days', demoBookings.length],
-            ['Monthly revenue', `€${revenue.toFixed(2)}`],
-            ['Pending', pending],
-            ['Active partners', 2],
-          ].map(([label, value]) => (
-            <Card key={label}>
-              <p className="text-sm font-bold text-[#4A6580]">{label}</p>
-              <p className="mt-3 text-3xl font-black text-ocean-deep">{value}</p>
-              {label === 'Pending' && Number(value) > 0 && <div className="mt-3"><Badge tone="red">Needs attention</Badge></div>}
-            </Card>
-          ))}
-        </div>
-
-        <Card className="mt-6">
-          <h2 className="mb-4 text-xl font-black text-ocean-deep">Today’s mini calendar</h2>
-          <div className="divide-y divide-[#D0E8F7]">
-            {demoBookings.map((booking) => (
-              <div key={booking.id} className="flex flex-col gap-2 py-4 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <p className="font-black text-ocean-deep">{booking.customer.name}</p>
-                  <p className="text-sm text-[#4A6580]">{booking.items.map((item) => item.product.name).join(', ')}</p>
-                </div>
-                <Badge tone={booking.status === 'PENDING' ? 'yellow' : booking.status === 'CONFIRMED' ? 'green' : booking.status === 'CANCELLED' ? 'red' : 'dark'}>
-                  {booking.status}
-                </Badge>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </>
-    )
-  }
-
-  const now = new Date()
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-  const weekStart = new Date(now)
-  weekStart.setDate(now.getDate() - 7)
-  const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-
-  const [today, week, month, pending, partners, dayBookings] = await Promise.all([
-    prisma.booking.count({ where: { date: { gte: dayStart } } }),
-    prisma.booking.count({ where: { date: { gte: weekStart } } }),
-    prisma.booking.findMany({ where: { date: { gte: monthStart }, status: { in: ['CONFIRMED', 'COMPLETED'] } } }),
-    prisma.booking.count({ where: { status: 'PENDING' } }),
-    prisma.partner.count(),
+  const [monthBookings, urgentBookings, partnerCount, seasonItems] = await Promise.all([
     prisma.booking.findMany({
-      where: { date: { gte: dayStart } },
-      include: { customer: true, items: { include: { product: true } }, partner: true },
+      where: { date: { gte: monthStart }, status: { in: ['CONFIRMED', 'COMPLETED'] } },
+    }),
+    prisma.booking.findMany({
+      where: { status: 'PENDING' },
+      include: { customer: true, items: { include: { product: true } } },
       orderBy: { date: 'asc' },
-      take: 8,
+    }),
+    prisma.partner.count(),
+    prisma.bookingItem.findMany({
+      where: {
+        booking: {
+          date: { gte: seasonStart, lt: seasonEnd },
+          status: { in: ['CONFIRMED', 'COMPLETED', 'PENDING'] },
+        },
+        product: { category: { in: ['NOLEGGIO', 'ESPERIENZA'] } },
+      },
+      include: {
+        product: { select: { name: true } },
+        booking: { select: { date: true } },
+      },
     }),
   ])
 
-  const revenue = month.reduce((sum, booking) => sum + (booking.totalPublic ?? 0), 0)
+  const monthRevenue = monthBookings.reduce((sum, b) => sum + (b.totalPublic ?? 0), 0)
+  const rowNames = [...new Set(seasonItems.map((item) => baseName(item.product.name)))].sort()
+
+  function cellRevenue(row: string, monthIndex: number) {
+    return seasonItems
+      .filter((item) => baseName(item.product.name) === row && item.booking.date.getMonth() === monthIndex)
+      .reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
+  }
+
+  function rowTotal(row: string) {
+    return SEASON_MONTHS.reduce((sum, m) => sum + cellRevenue(row, m.index), 0)
+  }
+
+  function colTotal(monthIndex: number) {
+    return rowNames.reduce((sum, row) => sum + cellRevenue(row, monthIndex), 0)
+  }
+
+  const grandTotal = SEASON_MONTHS.reduce((sum, m) => sum + colTotal(m.index), 0)
 
   return (
     <>
-      <PageHeader title="Dashboard" subtitle="Today’s operating snapshot for bookings, partners and revenue." />
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        {[
-          ['Bookings today', today],
-          ['Last 7 days', week],
-          ['Monthly revenue', `€${revenue.toFixed(2)}`],
-          ['Pending', pending],
-          ['Active partners', partners],
-        ].map(([label, value]) => (
-          <Card key={label}>
-            <p className="text-sm font-bold text-[#4A6580]">{label}</p>
-            <p className="mt-3 text-3xl font-black text-ocean-deep">{value}</p>
-            {label === 'Pending' && Number(value) > 0 && <div className="mt-3"><Badge tone="red">Needs attention</Badge></div>}
-          </Card>
-        ))}
+      <PageHeader title="Dashboard" subtitle="Urgent actions, monthly revenue and season overview." />
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <p className="text-sm font-bold text-[#4A6580]">Monthly revenue</p>
+          <p className="mt-3 text-3xl font-black text-ocean-deep">€{monthRevenue.toFixed(2)}</p>
+        </Card>
+        <Card>
+          <p className="text-sm font-bold text-[#4A6580]">Active partners</p>
+          <p className="mt-3 text-3xl font-black text-ocean-deep">{partnerCount}</p>
+        </Card>
+        <Card>
+          <p className="text-sm font-bold text-[#4A6580]">Pending actions</p>
+          <p className="mt-3 text-3xl font-black text-ocean-deep">{urgentBookings.length}</p>
+          {urgentBookings.length > 0 && (
+            <div className="mt-3">
+              <Badge tone="red">Needs attention</Badge>
+            </div>
+          )}
+        </Card>
       </div>
 
       <Card className="mt-6">
-        <h2 className="mb-4 text-xl font-black text-ocean-deep">Today’s mini calendar</h2>
-        <div className="divide-y divide-[#D0E8F7]">
-          {dayBookings.map((booking) => (
-            <div key={booking.id} className="flex flex-col gap-2 py-4 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="font-black text-ocean-deep">{booking.customer.name}</p>
-                <p className="text-sm text-[#4A6580]">{booking.items.map((item) => item.product.name).join(', ')}</p>
-              </div>
-              <Badge tone={booking.status === 'PENDING' ? 'yellow' : booking.status === 'CONFIRMED' ? 'green' : booking.status === 'CANCELLED' ? 'red' : 'dark'}>
-                {booking.status}
-              </Badge>
-            </div>
-          ))}
-          {!dayBookings.length && <p className="py-8 text-center text-[#4A6580]">No bookings for today.</p>}
-        </div>
+        <h2 className="text-xl font-black text-ocean-deep">Urgent actions</h2>
+        <p className="mt-1 mb-4 text-sm text-[#4A6580]">Bookings waiting for confirmation or correction. Click to open.</p>
+        {urgentBookings.length === 0 ? (
+          <p className="py-10 text-center text-[#4A6580]">No pending actions — all clear.</p>
+        ) : (
+          <div className="divide-y divide-[#D0E8F7]">
+            {urgentBookings.map((booking) => (
+              <Link
+                key={booking.id}
+                href={`/admin/prenotazioni/${booking.id}`}
+                className="-mx-3 flex flex-col gap-2 rounded-lg px-3 py-4 transition hover:bg-ocean-light md:flex-row md:items-center md:justify-between"
+              >
+                <div>
+                  <p className="font-black text-ocean-deep">{booking.customer.name}</p>
+                  <p className="text-sm text-[#4A6580]">
+                    {booking.date.toLocaleDateString('en-GB')} &middot;{' '}
+                    {booking.timeSlot === 'GIORNATA_INTERA' ? 'Full day' : 'Half day'}
+                  </p>
+                  <p className="text-sm text-[#4A6580]">
+                    {booking.items.map((i) => i.product.name).join(', ')}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-3">
+                  <Badge tone="yellow">PENDING</Badge>
+                  <span className="font-black text-ocean-deep">
+                    {booking.totalPublic != null ? `€${booking.totalPublic.toFixed(2)}` : '—'}
+                  </span>
+                  <span className="text-sm font-bold text-ocean-mid">Review →</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <Card className="mt-6 overflow-x-auto">
+        <h2 className="text-xl font-black text-ocean-deep">Season revenue {year}</h2>
+        <p className="mt-1 mb-5 text-sm text-[#4A6580]">
+          Jun – Nov · Confirmed + pending bookings · Excludes cancelled and extras.
+        </p>
+        {rowNames.length === 0 ? (
+          <p className="py-10 text-center text-[#4A6580]">No bookings for the Jun–Nov season yet.</p>
+        ) : (
+          <table className="w-full min-w-[640px] text-sm">
+            <thead>
+              <tr className="border-b border-[#D0E8F7]">
+                <th className="pb-3 text-left font-bold text-[#4A6580]">Experience</th>
+                {SEASON_MONTHS.map((m) => (
+                  <th key={m.index} className="pb-3 text-right font-bold text-[#4A6580]">
+                    {m.label}
+                  </th>
+                ))}
+                <th className="pb-3 text-right font-black text-ocean-deep">Total</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#D0E8F7]">
+              {rowNames.map((row) => (
+                <tr key={row}>
+                  <td className="py-3 font-bold text-ocean-deep">{row}</td>
+                  {SEASON_MONTHS.map((m) => {
+                    const val = cellRevenue(row, m.index)
+                    return (
+                      <td key={m.index} className="py-3 text-right text-[#4A6580]">
+                        {val > 0 ? `€${val.toFixed(0)}` : '—'}
+                      </td>
+                    )
+                  })}
+                  <td className="py-3 text-right font-black text-ocean-deep">
+                    €{rowTotal(row).toFixed(0)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="border-t-2 border-[#D0E8F7]">
+                <td className="pt-3 font-black text-ocean-deep">Total</td>
+                {SEASON_MONTHS.map((m) => {
+                  const val = colTotal(m.index)
+                  return (
+                    <td key={m.index} className="pt-3 text-right font-black text-ocean-deep">
+                      {val > 0 ? `€${val.toFixed(0)}` : '—'}
+                    </td>
+                  )
+                })}
+                <td className="pt-3 text-right font-black text-ocean-deep">€{grandTotal.toFixed(0)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        )}
       </Card>
     </>
   )

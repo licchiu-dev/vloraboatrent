@@ -10,6 +10,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     where: { id },
     data: {
       status: body.status,
+      paymentMethod: body.paymentMethod,
       notes: body.notes,
       internalNotes: body.internalNotes,
       date: body.date ? new Date(body.date) : undefined,

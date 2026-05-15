@@ -27,6 +27,11 @@ enum ProductCategory {
   EXTRA
 }
 
+enum FleetCategory {
+  BARCA
+  GOMMONE
+}
+
 enum TimeSlot {
   GIORNATA_INTERA
   MEZZA_GIORNATA
@@ -37,6 +42,12 @@ enum BookingStatus {
   CONFIRMED
   CANCELLED
   COMPLETED
+}
+
+enum PaymentMethod {
+  ONLINE
+  PARTNER
+  MOLO
 }
 
 model User {
@@ -75,6 +86,7 @@ model Product {
   active        Boolean         @default(true)
   partnerPrices PartnerPrice[]
   bookingItems  BookingItem[]
+  fleetAssets   FleetAsset[]
   createdAt     DateTime        @default(now())
 }
 
@@ -106,7 +118,9 @@ model Booking {
   date          DateTime
   timeSlot      TimeSlot
   status        BookingStatus
+  paymentMethod PaymentMethod @default(MOLO)
   items         BookingItem[]
+  fleetAssignments BookingFleetAssignment[]
   partner       Partner?      @relation(fields: [partnerId], references: [id])
   partnerId     String?
   discountCode  String?
@@ -118,6 +132,29 @@ model Booking {
   createdBy     String
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
+}
+
+model FleetAsset {
+  id             String                   @id @default(cuid())
+  name           String                   @unique
+  category       FleetCategory
+  pricingProduct Product                  @relation(fields: [pricingProductId], references: [id])
+  pricingProductId String
+  active         Boolean                  @default(true)
+  notes          String?
+  assignments    BookingFleetAssignment[]
+  createdAt      DateTime                 @default(now())
+}
+
+model BookingFleetAssignment {
+  id           String     @id @default(cuid())
+  booking      Booking    @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  bookingId    String
+  fleetAsset   FleetAsset @relation(fields: [fleetAssetId], references: [id], onDelete: Cascade)
+  fleetAssetId String
+  createdAt    DateTime   @default(now())
+
+  @@unique([bookingId, fleetAssetId])
 }
 
 model BookingItem {

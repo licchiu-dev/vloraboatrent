@@ -60,6 +60,7 @@ export async function POST(request: Request) {
     date: body.data,
     timeSlot: body.tipo === 'esperienza' || body.fascia !== 'Mezza giornata' ? 'GIORNATA_INTERA' : 'MEZZA_GIORNATA',
     status: 'PENDING',
+    paymentMethod: 'MOLO',
     items,
     discountCode: body.discountCode,
     notes,

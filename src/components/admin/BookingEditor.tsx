@@ -4,17 +4,26 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Partner, Product } from '@prisma/client'
 
+type FleetAsset = {
+  id: string
+  name: string
+  category: string
+}
+
 export default function BookingEditor({ partnerMode = false }: { partnerMode?: boolean }) {
   const router = useRouter()
   const [products, setProducts] = useState<Product[]>([])
   const [partners, setPartners] = useState<Partner[]>([])
+  const [fleetAssets, setFleetAssets] = useState<FleetAsset[]>([])
+  const [fleetAssetIds, setFleetAssetIds] = useState<string[]>([])
   const [items, setItems] = useState([{ productId: '', quantity: 1 }])
-  const [form, setForm] = useState({ name: '', email: '', phone: '', date: '', timeSlot: 'GIORNATA_INTERA', partnerId: '', discountCode: '', notes: '', internalNotes: '', status: 'CONFIRMED' })
+  const [form, setForm] = useState({ name: '', email: '', phone: '', date: '', timeSlot: 'GIORNATA_INTERA', paymentMethod: 'MOLO', partnerId: '', discountCode: '', notes: '', internalNotes: '', status: 'CONFIRMED' })
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
 
   useEffect(() => {
     fetch('/api/products').then((res) => res.json()).then(setProducts)
+    fetch('/api/fleet').then((res) => res.ok ? res.json() : []).then(setFleetAssets)
     if (!partnerMode) fetch('/api/partners').then((res) => res.ok ? res.json() : []).then(setPartners)
   }, [partnerMode])
 
@@ -33,6 +42,7 @@ export default function BookingEditor({ partnerMode = false }: { partnerMode?: b
         customer: { name: form.name, email: form.email, phone: form.phone },
         date: form.date,
         timeSlot: form.timeSlot,
+        paymentMethod: form.paymentMethod,
         status: form.status,
         partnerId: form.partnerId || undefined,
         discountCode: form.discountCode || undefined,
@@ -45,6 +55,19 @@ export default function BookingEditor({ partnerMode = false }: { partnerMode?: b
     if (!response.ok) {
       setMessage('Save failed. Check the required fields.')
       return
+    }
+    const booking = await response.json()
+    if (fleetAssetIds.length > 0) {
+      const assignmentResponse = await fetch('/api/fleet/assignments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId: booking.id, fleetAssetIds }),
+      })
+      if (!assignmentResponse.ok) {
+        const result = await assignmentResponse.json()
+        setMessage(result.error ?? 'Booking saved, but fleet assignment failed.')
+        return
+      }
     }
     setMessage('Booking saved.')
     router.push(partnerMode ? '/partner/prenotazioni' : '/admin/prenotazioni')
@@ -72,6 +95,13 @@ export default function BookingEditor({ partnerMode = false }: { partnerMode?: b
           <select value={form.timeSlot} onChange={(e) => setForm({ ...form, timeSlot: e.target.value })} className="mt-2 w-full rounded-lg border border-[#D0E8F7] px-3 py-2">
             <option value="GIORNATA_INTERA">Full day</option>
             <option value="MEZZA_GIORNATA">Half day</option>
+          </select>
+        </label>
+        <label className="text-sm font-bold text-ocean-deep">Payment
+          <select value={form.paymentMethod} onChange={(e) => setForm({ ...form, paymentMethod: e.target.value })} className="mt-2 w-full rounded-lg border border-[#D0E8F7] px-3 py-2">
+            <option value="ONLINE">Online</option>
+            <option value="PARTNER">Partner</option>
+            <option value="MOLO">At the dock</option>
           </select>
         </label>
         {!partnerMode && (
@@ -103,6 +133,28 @@ export default function BookingEditor({ partnerMode = false }: { partnerMode?: b
           </div>
         ))}
         <button type="button" onClick={() => setItems([...items, { productId: '', quantity: 1 }])} className="rounded-full bg-ocean-light px-4 py-2 text-sm font-black text-ocean-deep">Add product</button>
+      </div>
+
+      <div className="space-y-3">
+        <p className="font-black text-ocean-deep">Fleet asset</p>
+        <p className="text-sm text-[#4A6580]">Select one or more boats to place this booking directly on the fleet calendar.</p>
+        <div className="flex flex-wrap gap-2">
+          {fleetAssets.map((asset) => (
+            <label key={asset.id} className="inline-flex items-center gap-2 rounded-full border border-[#D0E8F7] px-3 py-2 text-sm">
+              <input
+                type="checkbox"
+                checked={fleetAssetIds.includes(asset.id)}
+                onChange={() =>
+                  setFleetAssetIds((current) =>
+                    current.includes(asset.id) ? current.filter((id) => id !== asset.id) : [...current, asset.id]
+                  )
+                }
+              />
+              {asset.name} · {asset.category}
+            </label>
+          ))}
+          {fleetAssets.length === 0 && <p className="text-sm text-[#4A6580]">No fleet assets available yet.</p>}
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">

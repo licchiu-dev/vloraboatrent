@@ -21,6 +21,7 @@ const shellCopy = {
   en: {
     dashboard: 'Dashboard',
     bookings: 'Bookings',
+    fleet: 'Fleet planning',
     customers: 'Customers',
     partners: 'Partners',
     products: 'Products',
@@ -37,6 +38,7 @@ const shellCopy = {
   it: {
     dashboard: 'Dashboard',
     bookings: 'Prenotazioni',
+    fleet: 'Programmazione flotta',
     customers: 'Clienti',
     partners: 'Partner',
     products: 'Prodotti',
@@ -53,6 +55,7 @@ const shellCopy = {
   sq: {
     dashboard: 'Dashboard',
     bookings: 'Rezervime',
+    fleet: 'Planifikimi i flotës',
     customers: 'Klientë',
     partners: 'Partnerë',
     products: 'Produkte',
@@ -69,6 +72,7 @@ const shellCopy = {
   ar: {
     dashboard: 'لوحة التحكم',
     bookings: 'الحجوزات',
+    fleet: 'تخطيط الأسطول',
     customers: 'العملاء',
     partners: 'الشركاء',
     products: 'المنتجات',
@@ -85,6 +89,7 @@ const shellCopy = {
   ru: {
     dashboard: 'Панель',
     bookings: 'Бронирования',
+    fleet: 'План флота',
     customers: 'Клиенты',
     partners: 'Партнеры',
     products: 'Продукты',
@@ -101,6 +106,7 @@ const shellCopy = {
   zh: {
     dashboard: '仪表盘',
     bookings: '预订',
+    fleet: '船队排期',
     customers: '客户',
     partners: '合作伙伴',
     products: '产品',
@@ -120,6 +126,7 @@ function adminLinks(t: typeof shellCopy.en) {
   return [
     { href: '/admin', label: t.dashboard, icon: BarChart3 },
     { href: '/admin/prenotazioni', label: t.bookings, icon: CalendarDays },
+    { href: '/admin/flotta', label: t.fleet, icon: ShipWheel },
     { href: '/admin/clienti', label: t.customers, icon: Users },
     { href: '/admin/partner', label: t.partners, icon: WalletCards },
     { href: '/admin/prodotti', label: t.products, icon: Package },
@@ -133,6 +140,7 @@ function partnerLinks(t: typeof shellCopy.en) {
   return [
     { href: '/partner', label: t.dashboard, icon: BarChart3 },
     { href: '/partner/prenotazioni', label: t.myBookings, icon: CalendarDays },
+    { href: '/partner/flotta', label: t.fleet, icon: ShipWheel },
     { href: '/partner/prenotazioni/nuova', label: t.newBooking, icon: Package },
   ]
 }

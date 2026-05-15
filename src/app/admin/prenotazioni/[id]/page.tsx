@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import AssetAssignmentEditor from '@/components/admin/AssetAssignmentEditor'
 import { Badge, Card, PageHeader } from '@/components/admin/Ui'
 import { prisma } from '@/lib/prisma'
 
@@ -6,7 +7,7 @@ export default async function BookingDetail({ params }: { params: Promise<{ id: 
   const { id } = await params
   const booking = await prisma.booking.findUnique({
     where: { id },
-    include: { customer: true, partner: true, items: { include: { product: true } } },
+    include: { customer: true, partner: true, items: { include: { product: true } }, fleetAssignments: true },
   })
   if (!booking) notFound()
 
@@ -25,6 +26,7 @@ export default async function BookingDetail({ params }: { params: Promise<{ id: 
             <div>
               <h2 className="text-xl font-black text-ocean-deep">Booking</h2>
               <p className="mt-3">{booking.date.toLocaleDateString('en-GB')} · {booking.timeSlot}</p>
+              <p className="mt-2 text-sm text-[#4A6580]">Payment: {booking.paymentMethod}</p>
               <p className="mt-2"><Badge>{booking.status}</Badge></p>
               <p className="mt-3 text-sm text-[#4A6580]">Created by {booking.createdBy}</p>
             </div>
@@ -57,6 +59,7 @@ export default async function BookingDetail({ params }: { params: Promise<{ id: 
             <p className="mt-4 font-black text-ocean-deep">Internal notes</p>
             <p className="mt-2">{booking.internalNotes ?? 'No internal notes.'}</p>
           </div>
+          <AssetAssignmentEditor bookingId={booking.id} initialAssetIds={booking.fleetAssignments.map((assignment) => assignment.fleetAssetId)} />
           <button className="mt-5 w-full rounded-full bg-ocean-deep px-4 py-3 font-black text-white">Send confirmation email</button>
           <p className="mt-2 text-xs text-[#8AACCC]">// TODO: EMAIL</p>
         </Card>

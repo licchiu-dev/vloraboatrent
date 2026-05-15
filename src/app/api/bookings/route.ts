@@ -1,4 +1,4 @@
-import { BookingStatus, TimeSlot } from '@prisma/client'
+import { BookingStatus, PaymentMethod, TimeSlot } from '@prisma/client'
 import { createBooking } from '@/lib/bookings'
 import { apiRequireRole } from '@/lib/guards'
 import { prisma } from '@/lib/prisma'
@@ -10,7 +10,12 @@ export async function GET() {
   const where = guard.session.user.role === 'PARTNER' ? { partnerId: guard.session.user.partnerId } : {}
   const bookings = await prisma.booking.findMany({
     where,
-    include: { customer: true, partner: true, items: { include: { product: true } } },
+    include: {
+      customer: true,
+      partner: true,
+      items: { include: { product: true } },
+      fleetAssignments: true,
+    },
     orderBy: { date: 'desc' },
   })
   return Response.json(bookings)
@@ -27,6 +32,7 @@ export async function POST(request: Request) {
     date: body.date,
     timeSlot: body.timeSlot in TimeSlot ? body.timeSlot : 'GIORNATA_INTERA',
     status: isPartner ? BookingStatus.PENDING : body.status ?? BookingStatus.CONFIRMED,
+    paymentMethod: body.paymentMethod in PaymentMethod ? body.paymentMethod : PaymentMethod.MOLO,
     items: body.items ?? [],
     partnerId: isPartner ? guard.session.user.partnerId : body.partnerId,
     discountCode: body.discountCode,

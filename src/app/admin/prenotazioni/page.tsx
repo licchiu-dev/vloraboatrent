@@ -2,6 +2,12 @@ import Link from 'next/link'
 import { Badge, Card, PageHeader } from '@/components/admin/Ui'
 import { prisma } from '@/lib/prisma'
 
+function paymentLabel(paymentMethod: 'ONLINE' | 'PARTNER' | 'MOLO', status: string) {
+  if (paymentMethod === 'ONLINE') return status === 'CONFIRMED' || status === 'COMPLETED' ? 'Paid' : 'Attesa incasso pagamento online'
+  if (paymentMethod === 'PARTNER') return 'Paid'
+  return 'Paga al molo'
+}
+
 export default async function BookingsPage() {
   const bookings = await prisma.booking.findMany({
     include: { customer: true, partner: true, items: { include: { product: true } } },
@@ -28,7 +34,7 @@ export default async function BookingsPage() {
         <table className="w-full min-w-[900px] text-left text-sm">
           <thead className="text-xs uppercase tracking-wider text-[#4A6580]">
             <tr>
-              {['Date', 'Customer', 'Services', 'Slot', 'Total', 'Status', 'Partner', 'Actions'].map((head) => <th key={head} className="pb-3">{head}</th>)}
+            {['Date', 'Customer', 'Services', 'Slot', 'Payment', 'Total', 'Status', 'Partner', 'Actions'].map((head) => <th key={head} className="pb-3">{head}</th>)}
             </tr>
           </thead>
           <tbody className="divide-y divide-[#D0E8F7]">
@@ -38,6 +44,7 @@ export default async function BookingsPage() {
                 <td className="font-bold">{booking.customer.name}</td>
                 <td>{booking.items.map((item) => item.product.name).join(', ')}</td>
                 <td>{booking.timeSlot}</td>
+                <td>{paymentLabel(booking.paymentMethod, booking.status)}</td>
                 <td>€{booking.totalPublic?.toFixed(2)}</td>
                 <td><Badge tone={booking.status === 'PENDING' ? 'yellow' : booking.status === 'CONFIRMED' ? 'green' : booking.status === 'CANCELLED' ? 'red' : 'dark'}>{booking.status}</Badge></td>
                 <td>{booking.partner?.companyName ?? 'Direct'}</td>

@@ -1,16 +1,45 @@
 import HeroVideo from '@/components/HeroVideo'
 import BookingForm from '@/components/BookingForm'
+import { formatEuroPrice, getProductPricesByName } from '@/lib/public-pricing'
 import {
   Anchor,
   Fish,
   FishingRod,
-  LifeBuoy,
-  RotateCw,
   UtensilsCrossed,
   Waves,
 } from 'lucide-react'
 
 type Lang = 'en' | 'it' | 'sq' | 'ar' | 'ru' | 'zh'
+
+const fishingPriceProducts = [
+  'Esperienza di Pesca - Giornata intera',
+  'Canna + Mulinello',
+  'Esca',
+  'Artificiale',
+  'Action Cam',
+  'Maschera + Boccaglio',
+  'Pinne',
+  'Muta 3 mm',
+  'Calzari',
+  'Cintura + Pesi',
+  'Fucile Sub',
+  'Torcia Sub',
+] as const
+
+const fallbackFishingPrices: Record<(typeof fishingPriceProducts)[number], number> = {
+  'Esperienza di Pesca - Giornata intera': 100,
+  'Canna + Mulinello': 15,
+  Esca: 10,
+  Artificiale: 5,
+  'Action Cam': 50,
+  'Maschera + Boccaglio': 10,
+  Pinne: 10,
+  'Muta 3 mm': 20,
+  Calzari: 5,
+  'Cintura + Pesi': 10,
+  'Fucile Sub': 25,
+  'Torcia Sub': 15,
+}
 
 const copy = {
   en: {
@@ -28,23 +57,48 @@ const copy = {
     ],
     priceTitle: 'Session price',
     priceValue: '€100 per person',
+    priceUnit: 'per person',
     priceMeta: 'Maximum 4 people per session',
     includedTitle: 'All inclusive',
     priceIncluded: ['Fuel', 'Boat with fish finder and professional equipment', 'Fish storage box', 'Lunch'],
     priceExcluded: 'Excluded: fishing equipment rental',
-    equipmentTitle: 'Rental equipment',
-    equipmentSub: 'Come hands-free. We take care of the gear',
+    gearTitle: 'What is included',
+    gearSub: 'Choose the style of fishing and see what is already on board or available as an extra.',
+    rodTitle: 'Rod fishing',
+    spearTitle: 'Spearfishing',
+    includedLabel: 'Included in the experience',
+    extrasLabel: 'Rentable / paid extras',
+    rodIncluded: ['Expert guide support', 'Landing net', 'Pliers / scissors', 'Cooler box', 'Rod holders / supports', 'Small technical kit included: hooks, sinkers and basic swivels'],
+    rodExtras: [
+      ['Canna + Mulinello', 'Rod + reel'],
+      ['Esca', 'Bait'],
+      ['Artificiale', 'Lure'],
+      ['Action Cam', 'Action cam'],
+    ],
+    spearIncluded: [
+      ['Safety briefing', 'Equipment use, depth, distances and speargun handling'],
+      ['Guide support', 'Required, especially for non-local guests'],
+      ['Diver-down buoy', 'Always provided'],
+      ['Safety knife', 'Included in the guided kit'],
+      ['First-aid kit on board', 'Included on the boat'],
+      ['Cooler box', 'Included on board'],
+      ['Boat support', 'Recovery, assistance and group control'],
+    ],
+    spearExtras: [
+      ['Maschera + Boccaglio', 'Mask + snorkel'],
+      ['Pinne', 'Fins'],
+      ['Muta 3 mm', '3 mm wetsuit'],
+      ['Calzari', 'Booties'],
+      ['Cintura + Pesi', 'Weight belt + weights'],
+      ['Fucile Sub', 'Speargun'],
+      ['Torcia Sub', 'Dive torch'],
+      ['Action Cam', 'Action cam'],
+    ],
     partnership: 'In partnership with Seagang',
     certified: 'Seagang certified equipment',
     partnershipText: 'All our fishing equipment is supplied and certified by Seagang, a sport fishing specialist. Placeholder partnership description to replace with final copy.',
     bookTitle: 'Book the experience',
     bookSub: 'We will contact you within 24 hours to confirm availability',
-    equipment: [
-      ['Fishing rod', 'Telescopic or casting rod', 'from €XX'],
-      ['Reel', 'Spinning reel with line', 'from €XX'],
-      ['Bait and lures', 'Complete live bait and lure set', 'from €XX'],
-      ['Life jacket', 'CE certified, adults and children', 'included'],
-    ],
   },
   it: {
     hero: ['Il mare ti aspetta', "all'alba."],
@@ -61,23 +115,48 @@ const copy = {
     ],
     priceTitle: 'Costo sessione',
     priceValue: '100€ a persona',
+    priceUnit: 'a persona',
     priceMeta: 'Massimo 4 persone per sessione',
     includedTitle: 'All inclusive',
     priceIncluded: ['Carburante', 'Barca con ecoscandaglio e strumentazione professionale', 'Box per raccogliere il pesce', 'Pranzo'],
     priceExcluded: "Escluso: noleggio dell'attrezzatura",
-    equipmentTitle: 'Attrezzatura in noleggio',
-    equipmentSub: 'Vieni a mani vuote, pensiamo noi a tutto',
+    gearTitle: 'Cosa è incluso',
+    gearSub: 'Due modi di vivere la pesca, con ciò che è già compreso e ciò che puoi aggiungere a pagamento.',
+    rodTitle: 'Pesca con le canne',
+    spearTitle: 'Pesca in apnea',
+    includedLabel: 'Incluso nell’esperienza',
+    extrasLabel: 'Noleggiabile / extra a pagamento',
+    rodIncluded: ['Supporto guida esperta', 'Retino', 'Pinza / forbici', 'Ghiacciaia', 'Porta canna / supporti', 'Piccola dotazione tecnica inclusa: ami, piombi e girelle base'],
+    rodExtras: [
+      ['Canna + Mulinello', 'Canna + mulinello'],
+      ['Esca', 'Esca'],
+      ['Artificiale', 'Artificiale'],
+      ['Action Cam', 'Action cam'],
+    ],
+    spearIncluded: [
+      ['Briefing sicurezza', 'Uso attrezzatura, profondità, distanze, gestione fucile'],
+      ['Accompagnamento / guida', 'Obbligatorio, soprattutto per clienti non locali'],
+      ['Boa segnasub', 'Da prevedere sempre'],
+      ['Coltello di sicurezza', 'Incluso nel kit guidato'],
+      ['Kit primo soccorso a bordo', 'Incluso nella barca'],
+      ['Ghiacciaia', 'Inclusa a bordo'],
+      ['Supporto barca', 'Recupero, assistenza e controllo gruppo'],
+    ],
+    spearExtras: [
+      ['Maschera + Boccaglio', 'Maschera + boccaglio'],
+      ['Pinne', 'Pinne'],
+      ['Muta 3 mm', 'Muta 3 mm'],
+      ['Calzari', 'Calzari'],
+      ['Cintura + Pesi', 'Cintura + pesi'],
+      ['Fucile Sub', 'Fucile sub'],
+      ['Torcia Sub', 'Torcia sub'],
+      ['Action Cam', 'Action cam'],
+    ],
     partnership: 'In partnership con Seagang',
     certified: 'Attrezzatura certificata Seagang',
     partnershipText: 'Tutta la nostra attrezzatura da pesca è fornita e certificata da Seagang, specialista della pesca sportiva. Descrizione placeholder della partnership da sostituire con il testo finale.',
     bookTitle: "Prenota l'esperienza",
     bookSub: 'Ti contatteremo entro 24 ore per confermare la disponibilità',
-    equipment: [
-      ['Canna da pesca', 'Canna telescopica o da lancio', 'da €XX'],
-      ['Mulinello', 'Mulinello spinning con filo', 'da €XX'],
-      ['Esche e artificiali', 'Set completo di esche vive e artificiali', 'da €XX'],
-      ['Giubbotto salvagente', 'Omologato CE, adulti e bambini', 'incluso'],
-    ],
   },
   sq: {
     hero: ['Deti të pret', 'në agim.'],
@@ -94,23 +173,48 @@ const copy = {
     ],
     priceTitle: 'Çmimi i sesionit',
     priceValue: '100€ për person',
+    priceUnit: 'për person',
     priceMeta: 'Maksimumi 4 persona për sesion',
     includedTitle: 'Gjithçka e përfshirë',
     priceIncluded: ['Karburanti', 'Varkë me fish finder dhe pajisje profesionale', 'Kuti për ruajtjen e peshkut', 'Dreka'],
     priceExcluded: 'Nuk përfshihet: qiraja e pajisjeve të peshkimit',
-    equipmentTitle: 'Pajisje me qira',
-    equipmentSub: 'Eja pa pajisje, për to mendojmë ne',
+    gearTitle: 'Çfarë përfshihet',
+    gearSub: 'Dy mënyra peshkimi, me atë që përfshihet dhe me ekstra që mund të shtosh.',
+    rodTitle: 'Peshkim me kallama',
+    spearTitle: 'Peshkim në apnea',
+    includedLabel: 'Përfshirë në eksperiencë',
+    extrasLabel: 'Me qira / ekstra me pagesë',
+    rodIncluded: ['Mbështetje nga guidë eksperte', 'Rrjetë', 'Pinca / gërshërë', 'Kuti ftohëse', 'Mbajtëse kallami', 'Set teknik bazë: grepa, plumba dhe rrotulluese'],
+    rodExtras: [
+      ['Canna + Mulinello', 'Kallam + mulinel'],
+      ['Esca', 'Karrem'],
+      ['Artificiale', 'Artificial'],
+      ['Action Cam', 'Action cam'],
+    ],
+    spearIncluded: [
+      ['Briefing sigurie', 'Përdorimi i pajisjeve, thellësia, distancat dhe menaxhimi i armës'],
+      ['Shoqërim / guidë', 'I detyrueshëm, sidomos për klientët jo lokalë'],
+      ['Bojë sinjalizuese', 'Gjithmonë e përfshirë'],
+      ['Thikë sigurie', 'Përfshirë në kitin e guiduar'],
+      ['Kit i ndihmës së parë në bord', 'Përfshirë në varkë'],
+      ['Kuti ftohëse', 'E përfshirë në bord'],
+      ['Mbështetje nga varka', 'Rikuperim, asistencë dhe kontroll i grupit'],
+    ],
+    spearExtras: [
+      ['Maschera + Boccaglio', 'Maskë + tub frymëmarrjeje'],
+      ['Pinne', 'Penda'],
+      ['Muta 3 mm', 'Kostum 3 mm'],
+      ['Calzari', 'Çorape uji'],
+      ['Cintura + Pesi', 'Rrip + pesha'],
+      ['Fucile Sub', 'Pushkë nënujore'],
+      ['Torcia Sub', 'Dritë nënujore'],
+      ['Action Cam', 'Action cam'],
+    ],
     partnership: 'Në partneritet me Seagang',
     certified: 'Pajisje të certifikuara Seagang',
     partnershipText: 'Të gjitha pajisjet tona të peshkimit furnizohen dhe certifikohen nga Seagang, specialist i peshkimit sportiv. Përshkrim placeholder i partneritetit për t’u zëvendësuar me tekstin final.',
     bookTitle: 'Rezervo eksperiencën',
     bookSub: 'Do të të kontaktojmë brenda 24 orësh për të konfirmuar disponueshmërinë',
-    equipment: [
-      ['Kallam peshkimi', 'Kallam teleskopik ose për hedhje', 'nga €XX'],
-      ['Mulinel', 'Mulinel spinning me fije', 'nga €XX'],
-      ['Karrem dhe artificialë', 'Set i plotë karremi dhe artificialësh', 'nga €XX'],
-      ['Jelek shpëtimi', 'I certifikuar CE, për të rritur dhe fëmijë', 'i përfshirë'],
-    ],
   },
   ar: {
     hero: ['البحر ينتظرك', 'عند الشروق.'],
@@ -127,23 +231,48 @@ const copy = {
     ],
     priceTitle: 'سعر الجلسة',
     priceValue: '100€ للشخص',
+    priceUnit: 'للشخص',
     priceMeta: 'بحد أقصى 4 أشخاص لكل جلسة',
     includedTitle: 'شامل كلياً',
     priceIncluded: ['الوقود', 'قارب مزود بجهاز كشف الأسماك ومعدات احترافية', 'صندوق لحفظ الأسماك', 'الغداء'],
     priceExcluded: 'غير مشمول: استئجار معدات الصيد',
-    equipmentTitle: 'معدات للإيجار',
-    equipmentSub: 'تعال بلا معدات. نحن نهتم بكل شيء',
+    gearTitle: 'ما هو مشمول',
+    gearSub: 'طريقتان للصيد، مع ما هو مشمول وما يمكن إضافته مقابل رسوم.',
+    rodTitle: 'الصيد بالقصبة',
+    spearTitle: 'الصيد بالرمح',
+    includedLabel: 'مشمول في التجربة',
+    extrasLabel: 'إضافات للإيجار / مدفوعة',
+    rodIncluded: ['دعم مرشد خبير', 'شبكة', 'كماشة / مقص', 'صندوق تبريد', 'حوامل القصبات', 'عدة تقنية أساسية: خطافات وأثقال ودوارات'],
+    rodExtras: [
+      ['Canna + Mulinello', 'قصبة + بكرة'],
+      ['Esca', 'طُعم'],
+      ['Artificiale', 'طُعم صناعي'],
+      ['Action Cam', 'كاميرا أكشن'],
+    ],
+    spearIncluded: [
+      ['إحاطة السلامة', 'استخدام المعدات والعمق والمسافات والتعامل مع البندقية'],
+      ['مرافقة / إرشاد', 'إلزامي خصوصاً للضيوف غير المحليين'],
+      ['عوامة الغواص', 'متوفرة دائماً'],
+      ['سكين أمان', 'مشمول في العدة المرافقة'],
+      ['عدة إسعاف أولي على القارب', 'مشمولة في القارب'],
+      ['صندوق تبريد', 'مشمول على متن القارب'],
+      ['دعم القارب', 'استرجاع ومساعدة ومراقبة المجموعة'],
+    ],
+    spearExtras: [
+      ['Maschera + Boccaglio', 'قناع + أنبوب تنفس'],
+      ['Pinne', 'زعانف'],
+      ['Muta 3 mm', 'بدلة 3 مم'],
+      ['Calzari', 'حذاء مائي'],
+      ['Cintura + Pesi', 'حزام + أوزان'],
+      ['Fucile Sub', 'بندقية صيد'],
+      ['Torcia Sub', 'مصباح غوص'],
+      ['Action Cam', 'كاميرا أكشن'],
+    ],
     partnership: 'بالشراكة مع Seagang',
     certified: 'معدات معتمدة من Seagang',
     partnershipText: 'كل معدات الصيد لدينا مقدمة ومعتمدة من Seagang، المتخصصة في الصيد الرياضي. وصف مؤقت للشراكة يتم استبداله بالنص النهائي.',
     bookTitle: 'احجز التجربة',
     bookSub: 'سنتواصل معك خلال 24 ساعة لتأكيد التوفر',
-    equipment: [
-      ['صنارة صيد', 'صنارة تلسكوبية أو للرمي', 'من €XX'],
-      ['بكرة', 'بكرة سبينينغ مع خيط', 'من €XX'],
-      ['طعم وطعوم صناعية', 'مجموعة كاملة من الطعم الحي والصناعي', 'من €XX'],
-      ['سترة نجاة', 'معتمدة CE للبالغين والأطفال', 'مشمول'],
-    ],
   },
   ru: {
     hero: ['Море ждет вас', 'на рассвете.'],
@@ -160,23 +289,48 @@ const copy = {
     ],
     priceTitle: 'Стоимость сессии',
     priceValue: '100€ с человека',
+    priceUnit: 'с человека',
     priceMeta: 'Максимум 4 человека за сессию',
     includedTitle: 'Все включено',
     priceIncluded: ['Топливо', 'Лодка с эхолотом и профессиональным оборудованием', 'Ящик для улова', 'Обед'],
     priceExcluded: 'Не включено: аренда рыболовного снаряжения',
-    equipmentTitle: 'Снаряжение напрокат',
-    equipmentSub: 'Приезжайте налегке. О снаряжении позаботимся мы',
+    gearTitle: 'Что включено',
+    gearSub: 'Два формата рыбалки: что уже входит и что можно добавить за доплату.',
+    rodTitle: 'Рыбалка с удочками',
+    spearTitle: 'Подводная охота',
+    includedLabel: 'Включено в опыт',
+    extrasLabel: 'Аренда / платные дополнения',
+    rodIncluded: ['Поддержка опытного гида', 'Подсак', 'Плоскогубцы / ножницы', 'Холодильный бокс', 'Держатели удилищ', 'Базовый технический набор: крючки, грузила и вертлюги'],
+    rodExtras: [
+      ['Canna + Mulinello', 'Удочка + катушка'],
+      ['Esca', 'Наживка'],
+      ['Artificiale', 'Приманка'],
+      ['Action Cam', 'Экшн-камера'],
+    ],
+    spearIncluded: [
+      ['Инструктаж по безопасности', 'Использование снаряжения, глубина, дистанции и обращение с ружьем'],
+      ['Сопровождение / гид', 'Обязательно, особенно для гостей не из региона'],
+      ['Сигнальный буй', 'Предоставляется всегда'],
+      ['Нож безопасности', 'Входит в комплект с гидом'],
+      ['Аптечка на борту', 'Входит в оснащение лодки'],
+      ['Холодильный бокс', 'Есть на борту'],
+      ['Поддержка лодки', 'Подбор, помощь и контроль группы'],
+    ],
+    spearExtras: [
+      ['Maschera + Boccaglio', 'Маска + трубка'],
+      ['Pinne', 'Ласты'],
+      ['Muta 3 mm', 'Гидрокостюм 3 мм'],
+      ['Calzari', 'Боты'],
+      ['Cintura + Pesi', 'Пояс + грузы'],
+      ['Fucile Sub', 'Подводное ружье'],
+      ['Torcia Sub', 'Подводный фонарь'],
+      ['Action Cam', 'Экшн-камера'],
+    ],
     partnership: 'В партнерстве с Seagang',
     certified: 'Снаряжение, сертифицированное Seagang',
     partnershipText: 'Все наше рыболовное снаряжение поставляется и сертифицируется Seagang, специалистом по спортивной рыбалке. Временное описание партнерства для замены финальным текстом.',
     bookTitle: 'Забронировать тур',
     bookSub: 'Мы свяжемся с вами в течение 24 часов, чтобы подтвердить наличие',
-    equipment: [
-      ['Удочка', 'Телескопическая или кастинговая удочка', 'от €XX'],
-      ['Катушка', 'Спиннинговая катушка с леской', 'от €XX'],
-      ['Наживка и приманки', 'Полный набор живой наживки и искусственных приманок', 'от €XX'],
-      ['Спасательный жилет', 'Сертификация CE, для взрослых и детей', 'включено'],
-    ],
   },
   zh: {
     hero: ['大海在等待', '日出时分。'],
@@ -193,32 +347,61 @@ const copy = {
     ],
     priceTitle: '单次价格',
     priceValue: '每人 100€',
+    priceUnit: '每人',
     priceMeta: '每场最多 4 人',
     includedTitle: '全包',
     priceIncluded: ['燃油', '配备探鱼器和专业设备的船只', '鱼获收纳箱', '午餐'],
     priceExcluded: '不包含：钓鱼装备租赁',
-    equipmentTitle: '租赁装备',
-    equipmentSub: '空手来即可，装备由我们准备',
+    gearTitle: '包含内容',
+    gearSub: '两种钓鱼方式，清楚列出已包含内容和可付费增加的项目。',
+    rodTitle: '竿钓',
+    spearTitle: '自由潜渔猎',
+    includedLabel: '体验已包含',
+    extrasLabel: '可租赁 / 付费附加项',
+    rodIncluded: ['专业向导支持', '抄网', '钳子 / 剪刀', '冷藏箱', '竿架 / 支架', '基础技术小套件：鱼钩、铅坠和基础转环'],
+    rodExtras: [
+      ['Canna + Mulinello', '鱼竿 + 渔轮'],
+      ['Esca', '鱼饵'],
+      ['Artificiale', '拟饵'],
+      ['Action Cam', '运动相机'],
+    ],
+    spearIncluded: [
+      ['安全说明', '装备使用、深度、距离和鱼枪管理'],
+      ['陪同 / 向导', '尤其对非本地客人是必需的'],
+      ['潜水员信号浮标', '始终提供'],
+      ['安全刀', '包含在带向导套件中'],
+      ['船上急救包', '船只已包含'],
+      ['冷藏箱', '船上已包含'],
+      ['船只支持', '接应、协助和团队控制'],
+    ],
+    spearExtras: [
+      ['Maschera + Boccaglio', '面镜 + 呼吸管'],
+      ['Pinne', '脚蹼'],
+      ['Muta 3 mm', '3 mm 潜水服'],
+      ['Calzari', '潜水袜'],
+      ['Cintura + Pesi', '配重带 + 配重'],
+      ['Fucile Sub', '鱼枪'],
+      ['Torcia Sub', '潜水灯'],
+      ['Action Cam', '运动相机'],
+    ],
     partnership: '与 Seagang 合作',
     certified: 'Seagang 认证装备',
     partnershipText: '我们的所有钓鱼装备均由运动钓鱼专家 Seagang 提供并认证。此处为合作说明占位文案，之后可替换为最终内容。',
     bookTitle: '预订体验',
     bookSub: '我们将在 24 小时内联系你确认可订情况',
-    equipment: [
-      ['钓竿', '伸缩竿或抛投竿', '起价 €XX'],
-      ['渔轮', '带鱼线的纺车轮', '起价 €XX'],
-      ['鱼饵和拟饵', '完整活饵和拟饵套装', '起价 €XX'],
-      ['救生衣', 'CE 认证，成人和儿童可用', '包含'],
-    ],
   },
 }
 
 const timelineIcons = [Anchor, FishingRod, UtensilsCrossed, Fish, Waves]
-const equipmentIcons = [FishingRod, RotateCw, Fish, LifeBuoy]
 
-export default function PublicFishing({ lang }: { lang: Lang }) {
+export default async function PublicFishing({ lang }: { lang: Lang }) {
   const t = copy[lang]
   const dir = lang === 'ar' ? 'rtl' : 'ltr'
+  const prices = await getProductPricesByName([...fishingPriceProducts])
+  const resolvedExperiencePrice = prices['Esperienza di Pesca - Giornata intera'] ?? fallbackFishingPrices['Esperienza di Pesca - Giornata intera']
+  const experiencePrice = lang === 'zh'
+    ? `${t.priceUnit} ${formatEuroPrice(resolvedExperiencePrice)}`
+    : `${formatEuroPrice(resolvedExperiencePrice)} ${t.priceUnit}`
 
   return (
     <div dir={dir}>
@@ -317,7 +500,7 @@ export default function PublicFishing({ lang }: { lang: Lang }) {
             <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
               <div>
                 <p className="text-sm font-bold uppercase tracking-wider text-ocean-mid">{t.priceTitle}</p>
-                <p className="mt-2 text-3xl font-black text-ocean-deep">{t.priceValue}</p>
+                <p className="mt-2 text-3xl font-black text-ocean-deep">{experiencePrice}</p>
                 <p className="mt-1 text-[#4A6580]">{t.priceMeta}</p>
               </div>
               <div className="md:max-w-md">
@@ -340,24 +523,53 @@ export default function PublicFishing({ lang }: { lang: Lang }) {
       <section className="py-20 px-6 bg-ocean-light">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-black text-ocean-deep tracking-tight mb-3">{t.equipmentTitle}</h2>
-            <p className="text-[#4A6580] text-xl">{t.equipmentSub}</p>
+            <h2 className="text-4xl md:text-5xl font-black text-ocean-deep tracking-tight mb-3">{t.gearTitle}</h2>
+            <p className="text-[#4A6580] text-xl">{t.gearSub}</p>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
-            {t.equipment.map(([name, description, price], index) => {
-              const Icon = equipmentIcons[index]
+          <div className="grid gap-6 md:grid-cols-2">
+            {[
+              { title: t.rodTitle, included: t.rodIncluded, extras: t.rodExtras },
+              { title: t.spearTitle, included: t.spearIncluded, extras: t.spearExtras },
+            ].map((card) => (
+              <div key={card.title} className="rounded-2xl border border-[#D0E8F7] bg-white p-6 md:p-8">
+                <h3 className="text-2xl font-black text-ocean-deep">{card.title}</h3>
 
-              return (
-              <div key={name} className="bg-white rounded-2xl p-6 text-center border border-[#D0E8F7] hover:border-ocean-bright hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                <Icon className="mx-auto mb-4 h-9 w-9 text-ocean-mid" strokeWidth={2.1} />
-                <h4 className="font-black text-ocean-deep mb-1">{name}</h4>
-                <p className="text-[#4A6580] text-xs mb-3 leading-snug">{description}</p>
-                <span className="inline-block bg-ocean-light text-ocean-mid text-xs font-bold px-3 py-1 rounded-full">{price}</span>
+                <div className="mt-6">
+                  <p className="text-sm font-bold uppercase tracking-wider text-ocean-mid">{t.includedLabel}</p>
+                  <ul className="mt-4 space-y-3">
+                    {card.included.map((item) => {
+                      const [label, note] = Array.isArray(item) ? item : [item]
+
+                      return (
+                        <li key={label} className="flex gap-3 text-sm leading-relaxed text-[#4A6580]">
+                          <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-ocean-bright" />
+                          <span>
+                            <strong className="font-bold text-ocean-deep">{label}</strong>
+                            {note ? ` - ${note}` : ''}
+                          </span>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </div>
+
+                <div className="mt-8">
+                  <p className="text-sm font-bold uppercase tracking-wider text-ocean-mid">{t.extrasLabel}</p>
+                  <div className="mt-4 divide-y divide-[#D0E8F7] rounded-xl border border-[#D0E8F7]">
+                    {card.extras.map(([productName, label]) => (
+                      <div key={productName} className="flex items-center justify-between gap-4 px-4 py-3 text-sm">
+                        <span className="font-bold text-ocean-deep">{label}</span>
+                        <span className="font-black text-ocean-mid">
+                          {formatEuroPrice(prices[productName] ?? fallbackFishingPrices[productName as keyof typeof fallbackFishingPrices], '€XX')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-              )
-            })}
+            ))}
           </div>
-          <div className="bg-white rounded-3xl border-2 border-ocean-bright p-8 flex flex-col md:flex-row items-center gap-8">
+          <div className="mt-12 bg-white rounded-3xl border-2 border-ocean-bright p-8 flex flex-col md:flex-row items-center gap-8">
             <div className="flex-shrink-0">
               <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl bg-white">
                 <img src="/images/seagang.png" alt="Seagang" className="h-full w-full object-contain" />

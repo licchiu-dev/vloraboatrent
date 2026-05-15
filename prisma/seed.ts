@@ -8,11 +8,21 @@ const products = [
   ['Noleggio Gommone - Mezza giornata', ProductCategory.NOLEGGIO, 150],
   ['Noleggio Gommone - Giornata intera', ProductCategory.NOLEGGIO, 230],
   ['Esperienza di Pesca - Mezza giornata', ProductCategory.ESPERIENZA, 80],
-  ['Esperienza di Pesca - Giornata intera', ProductCategory.ESPERIENZA, 140],
+  ['Esperienza di Pesca - Giornata intera', ProductCategory.ESPERIENZA, 100],
   ['Kit Snorkeling', ProductCategory.EXTRA, 10],
-  ['Action Cam', ProductCategory.EXTRA, 15],
+  ['Action Cam', ProductCategory.EXTRA, 50],
   ['Set Tramonto', ProductCategory.EXTRA, 25],
   ['Attrezzatura Pesca', ProductCategory.EXTRA, 20],
+  ['Canna + Mulinello', ProductCategory.EXTRA, 15],
+  ['Esca', ProductCategory.EXTRA, 10],
+  ['Artificiale', ProductCategory.EXTRA, 5],
+  ['Maschera + Boccaglio', ProductCategory.EXTRA, 10],
+  ['Pinne', ProductCategory.EXTRA, 10],
+  ['Muta 3 mm', ProductCategory.EXTRA, 20],
+  ['Calzari', ProductCategory.EXTRA, 5],
+  ['Cintura + Pesi', ProductCategory.EXTRA, 10],
+  ['Fucile Sub', ProductCategory.EXTRA, 25],
+  ['Torcia Sub', ProductCategory.EXTRA, 15],
 ] as const
 
 async function main() {

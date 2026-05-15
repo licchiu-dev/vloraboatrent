@@ -17,6 +17,34 @@ export async function getMinimumProductPrice(category: ProductCategory) {
   return result._min.basePrice
 }
 
+export async function getProductPricesByName(names: string[]) {
+  if (isDemoMode()) {
+    const demoPrices: Record<string, number> = {
+      'Esperienza di Pesca - Giornata intera': 100,
+      'Canna + Mulinello': 15,
+      Esca: 10,
+      Artificiale: 5,
+      'Action Cam': 50,
+      'Maschera + Boccaglio': 10,
+      Pinne: 10,
+      'Muta 3 mm': 20,
+      Calzari: 5,
+      'Cintura + Pesi': 10,
+      'Fucile Sub': 25,
+      'Torcia Sub': 15,
+    }
+
+    return Object.fromEntries(names.flatMap((name) => (demoPrices[name] == null ? [] : [[name, demoPrices[name]]])))
+  }
+
+  const products = await prisma.product.findMany({
+    where: { name: { in: names }, active: true },
+    select: { name: true, basePrice: true },
+  })
+
+  return Object.fromEntries(products.map((product) => [product.name, product.basePrice]))
+}
+
 export function formatEuroPrice(value: number | null | undefined, fallback = '€XX') {
   if (value == null) return fallback
   return `€${value.toLocaleString('it-IT', { maximumFractionDigits: 0 })}`

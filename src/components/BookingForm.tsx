@@ -24,9 +24,18 @@ interface FormData {
   actionCam: number
   setTramonto: number
   // Campi esperienza
+  esperienzaPesca: string
   partecipanti: number
-  noleggioAttrezzatura: boolean
-  setAttrezzatura: number
+  cannaMulinello: number
+  esca: number
+  artificiale: number
+  mascheraBoccaglio: number
+  pinne: number
+  muta3mm: number
+  calzari: number
+  cinturaPesi: number
+  fucileSub: number
+  torciaSub: number
 }
 
 interface FormErrors {
@@ -35,6 +44,7 @@ interface FormErrors {
   telefono?: string
   data?: string
   fascia?: string
+  esperienzaPesca?: string
 }
 
 const initialData: FormData = {
@@ -50,9 +60,18 @@ const initialData: FormData = {
   snorkeling: 0,
   actionCam: 0,
   setTramonto: 0,
+  esperienzaPesca: '',
   partecipanti: 1,
-  noleggioAttrezzatura: false,
-  setAttrezzatura: 0,
+  cannaMulinello: 0,
+  esca: 0,
+  artificiale: 0,
+  mascheraBoccaglio: 0,
+  pinne: 0,
+  muta3mm: 0,
+  calzari: 0,
+  cinturaPesi: 0,
+  fucileSub: 0,
+  torciaSub: 0,
 }
 
 const labelClass = 'block text-sm font-semibold text-ocean-deep mb-2'
@@ -66,6 +85,7 @@ const copy = {
     required: 'Required field',
     dateRequired: 'Select a date',
     slotRequired: 'Select a time slot',
+    experienceRequired: 'Select an experience',
     sentTitle: 'Request sent!',
     sentText: 'Thank you. We received your request and will contact you shortly.',
     fullName: 'Full name *',
@@ -80,8 +100,23 @@ const copy = {
     sunset: 'Sunset set',
     sunsetHint: 'placeholder description',
     participants: 'Participants',
-    rentGear: 'Rent fishing equipment?',
-    gearSets: 'How many equipment sets?',
+    fishingStyle: 'Experience *',
+    rodFishing: 'Rod fishing',
+    spearfishing: 'Spearfishing',
+    rentableExtras: 'Rentable extras',
+    extras: {
+      cannaMulinello: 'Rod + reel',
+      esca: 'Bait',
+      artificiale: 'Lure',
+      actionCam: 'Action cam',
+      mascheraBoccaglio: 'Mask + snorkel',
+      pinne: 'Fins',
+      muta3mm: '3 mm wetsuit',
+      calzari: 'Booties',
+      cinturaPesi: 'Weight belt + weights',
+      fucileSub: 'Speargun',
+      torciaSub: 'Dive torch',
+    },
     notes: 'Additional notes',
     notesPlaceholder: 'Special requests, allergies, accessibility needs...',
     promo: 'Do you have a promotional code?',
@@ -95,6 +130,7 @@ const copy = {
     required: 'Campo obbligatorio',
     dateRequired: 'Seleziona una data',
     slotRequired: 'Seleziona una fascia oraria',
+    experienceRequired: "Seleziona un'esperienza",
     sentTitle: 'Richiesta inviata!',
     sentText: 'Grazie! Abbiamo ricevuto la tua richiesta e ti contatteremo a breve.',
     fullName: 'Nome e cognome *',
@@ -109,8 +145,23 @@ const copy = {
     sunset: 'Set tramonto',
     sunsetHint: 'descrizione placeholder',
     participants: 'Numero partecipanti',
-    rentGear: 'Noleggio attrezzatura da pesca?',
-    gearSets: 'Quanti set attrezzatura?',
+    fishingStyle: 'Esperienza *',
+    rodFishing: 'Pesca con le canne',
+    spearfishing: 'Pesca in apnea',
+    rentableExtras: 'Extra noleggiabili',
+    extras: {
+      cannaMulinello: 'Canna + mulinello',
+      esca: 'Esca',
+      artificiale: 'Artificiale',
+      actionCam: 'Action cam',
+      mascheraBoccaglio: 'Maschera + boccaglio',
+      pinne: 'Pinne',
+      muta3mm: 'Muta 3 mm',
+      calzari: 'Calzari',
+      cinturaPesi: 'Cintura + pesi',
+      fucileSub: 'Fucile sub',
+      torciaSub: 'Torcia sub',
+    },
     notes: 'Note aggiuntive',
     notesPlaceholder: 'Eventuali richieste speciali, allergie, esigenze particolari...',
     promo: 'Hai un codice promozionale?',
@@ -124,6 +175,7 @@ const copy = {
     required: 'Fushë e detyrueshme',
     dateRequired: 'Zgjidh një datë',
     slotRequired: 'Zgjidh orarin',
+    experienceRequired: 'Zgjidh eksperiencën',
     sentTitle: 'Kërkesa u dërgua!',
     sentText: 'Faleminderit. E morëm kërkesën dhe do të të kontaktojmë së shpejti.',
     fullName: 'Emër dhe mbiemër *',
@@ -138,8 +190,23 @@ const copy = {
     sunset: 'Set perëndimi',
     sunsetHint: 'përshkrim placeholder',
     participants: 'Pjesëmarrës',
-    rentGear: 'Qira pajisjesh peshkimi?',
-    gearSets: 'Sa sete pajisjesh?',
+    fishingStyle: 'Eksperienca *',
+    rodFishing: 'Peshkim me kallama',
+    spearfishing: 'Peshkim në apnea',
+    rentableExtras: 'Ekstra me qira',
+    extras: {
+      cannaMulinello: 'Kallam + mulinel',
+      esca: 'Karrem',
+      artificiale: 'Artificial',
+      actionCam: 'Action cam',
+      mascheraBoccaglio: 'Maskë + tub frymëmarrjeje',
+      pinne: 'Penda',
+      muta3mm: 'Kostum 3 mm',
+      calzari: 'Çorape uji',
+      cinturaPesi: 'Rrip + pesha',
+      fucileSub: 'Pushkë nënujore',
+      torciaSub: 'Dritë nënujore',
+    },
     notes: 'Shënime shtesë',
     notesPlaceholder: 'Kërkesa të veçanta, alergji, nevoja specifike...',
     promo: 'Ke një kod promocional?',
@@ -153,6 +220,7 @@ const copy = {
     required: 'حقل مطلوب',
     dateRequired: 'اختر تاريخا',
     slotRequired: 'اختر فترة زمنية',
+    experienceRequired: 'اختر التجربة',
     sentTitle: 'تم إرسال الطلب!',
     sentText: 'شكرا لك. استلمنا طلبك وسنتواصل معك قريبا.',
     fullName: 'الاسم الكامل *',
@@ -167,8 +235,23 @@ const copy = {
     sunset: 'طقم الغروب',
     sunsetHint: 'وصف مؤقت',
     participants: 'المشاركون',
-    rentGear: 'استئجار معدات الصيد؟',
-    gearSets: 'كم عدد مجموعات المعدات؟',
+    fishingStyle: 'التجربة *',
+    rodFishing: 'الصيد بالقصبة',
+    spearfishing: 'الصيد بالرمح',
+    rentableExtras: 'إضافات قابلة للإيجار',
+    extras: {
+      cannaMulinello: 'قصبة + بكرة',
+      esca: 'طعم',
+      artificiale: 'طعم صناعي',
+      actionCam: 'كاميرا أكشن',
+      mascheraBoccaglio: 'قناع + أنبوب تنفس',
+      pinne: 'زعانف',
+      muta3mm: 'بدلة 3 مم',
+      calzari: 'حذاء مائي',
+      cinturaPesi: 'حزام + أوزان',
+      fucileSub: 'بندقية صيد',
+      torciaSub: 'مصباح غوص',
+    },
     notes: 'ملاحظات إضافية',
     notesPlaceholder: 'طلبات خاصة، حساسية، احتياجات وصول...',
     promo: 'هل لديك رمز ترويجي؟',
@@ -182,6 +265,7 @@ const copy = {
     required: 'Обязательное поле',
     dateRequired: 'Выберите дату',
     slotRequired: 'Выберите временной слот',
+    experienceRequired: 'Выберите формат',
     sentTitle: 'Заявка отправлена!',
     sentText: 'Спасибо. Мы получили вашу заявку и скоро свяжемся с вами.',
     fullName: 'Имя и фамилия *',
@@ -196,8 +280,23 @@ const copy = {
     sunset: 'Закатный сет',
     sunsetHint: 'временное описание',
     participants: 'Участники',
-    rentGear: 'Взять рыболовное снаряжение напрокат?',
-    gearSets: 'Сколько комплектов снаряжения?',
+    fishingStyle: 'Формат *',
+    rodFishing: 'Рыбалка с удочками',
+    spearfishing: 'Подводная охота',
+    rentableExtras: 'Дополнения в аренду',
+    extras: {
+      cannaMulinello: 'Удочка + катушка',
+      esca: 'Наживка',
+      artificiale: 'Приманка',
+      actionCam: 'Экшн-камера',
+      mascheraBoccaglio: 'Маска + трубка',
+      pinne: 'Ласты',
+      muta3mm: 'Гидрокостюм 3 мм',
+      calzari: 'Боты',
+      cinturaPesi: 'Пояс + грузы',
+      fucileSub: 'Подводное ружье',
+      torciaSub: 'Подводный фонарь',
+    },
     notes: 'Дополнительные заметки',
     notesPlaceholder: 'Особые запросы, аллергии, потребности доступности...',
     promo: 'У вас есть промокод?',
@@ -211,6 +310,7 @@ const copy = {
     required: '必填项',
     dateRequired: '请选择日期',
     slotRequired: '请选择时间段',
+    experienceRequired: '请选择体验',
     sentTitle: '请求已发送！',
     sentText: '谢谢。我们已收到你的请求，并会尽快联系你。',
     fullName: '姓名 *',
@@ -225,8 +325,23 @@ const copy = {
     sunset: '日落套装',
     sunsetHint: '占位描述',
     participants: '参与人数',
-    rentGear: '租用钓鱼装备？',
-    gearSets: '需要几套装备？',
+    fishingStyle: '体验 *',
+    rodFishing: '竿钓',
+    spearfishing: '自由潜渔猎',
+    rentableExtras: '可租赁附加项',
+    extras: {
+      cannaMulinello: '鱼竿 + 渔轮',
+      esca: '鱼饵',
+      artificiale: '拟饵',
+      actionCam: '运动相机',
+      mascheraBoccaglio: '面镜 + 呼吸管',
+      pinne: '脚蹼',
+      muta3mm: '3 mm 潜水服',
+      calzari: '潜水袜',
+      cinturaPesi: '配重带 + 配重',
+      fucileSub: '鱼枪',
+      torciaSub: '潜水灯',
+    },
     notes: '附加备注',
     notesPlaceholder: '特殊要求、过敏、无障碍需求...',
     promo: '你有优惠码吗？',
@@ -252,7 +367,8 @@ export default function BookingForm({ tipo = 'generico', lang = 'en' }: BookingF
     if (!data.email.trim()) e.email = t.required
     if (!data.telefono.trim()) e.telefono = t.required
     if (!data.data) e.data = t.dateRequired
-    if (!data.fascia) e.fascia = t.slotRequired
+    if (tipo !== 'esperienza' && !data.fascia) e.fascia = t.slotRequired
+    if (tipo === 'esperienza' && !data.esperienzaPesca) e.esperienzaPesca = t.experienceRequired
     return e
   }
 
@@ -337,25 +453,26 @@ export default function BookingForm({ tipo = 'generico', lang = 'en' }: BookingF
         </div>
       </div>
 
-      {/* Fascia oraria */}
-      <div>
-        <label className={labelClass}>{t.slot}</label>
-        <div className="flex gap-6 flex-wrap">
-          {['Giornata intera', 'Mezza giornata'].map((opt) => (
-            <label key={opt} className="flex items-center gap-2.5 cursor-pointer group">
-              <input
-                type="radio" name="fascia" value={opt}
-                checked={data.fascia === opt} onChange={handleChange}
-                className="w-4 h-4 accent-ocean-bright"
-              />
-              <span className="font-medium text-[#0A1628] group-hover:text-ocean-deep transition-colors">
-                {opt === 'Giornata intera' ? t.fullDay : t.halfDay}
-              </span>
-            </label>
-          ))}
+      {tipo !== 'esperienza' && (
+        <div>
+          <label className={labelClass}>{t.slot}</label>
+          <div className="flex gap-6 flex-wrap">
+            {['Giornata intera', 'Mezza giornata'].map((opt) => (
+              <label key={opt} className="flex items-center gap-2.5 cursor-pointer group">
+                <input
+                  type="radio" name="fascia" value={opt}
+                  checked={data.fascia === opt} onChange={handleChange}
+                  className="w-4 h-4 accent-ocean-bright"
+                />
+                <span className="font-medium text-[#0A1628] group-hover:text-ocean-deep transition-colors">
+                  {opt === 'Giornata intera' ? t.fullDay : t.halfDay}
+                </span>
+              </label>
+            ))}
+          </div>
+          {errors.fascia && <p className="text-red-500 text-xs mt-1.5">{errors.fascia}</p>}
         </div>
-        {errors.fascia && <p className="text-red-500 text-xs mt-1.5">{errors.fascia}</p>}
-      </div>
+      )}
 
       {/* Campi aggiuntivi: noleggio + generico */}
       {(tipo === 'noleggio' || tipo === 'generico') && (
@@ -398,34 +515,66 @@ export default function BookingForm({ tipo = 'generico', lang = 'en' }: BookingF
       {/* Campi aggiuntivi: esperienza */}
       {tipo === 'esperienza' && (
         <div className="space-y-5">
-          <div>
-            <label className={labelClass}>{t.participants}</label>
-            <input
-              type="number" name="partecipanti" value={data.partecipanti}
-              onChange={handleChange} min={1}
-              className={`${validInputClass} max-w-[10rem]`}
-            />
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <div>
+              <label className={labelClass}>{t.fishingStyle}</label>
+              <select
+                name="esperienzaPesca"
+                value={data.esperienzaPesca}
+                onChange={handleChange}
+                className={errors.esperienzaPesca ? errorInputClass : validInputClass}
+              >
+                <option value="">-</option>
+                <option value="pesca-canne">{t.rodFishing}</option>
+                <option value="pesca-apnea">{t.spearfishing}</option>
+              </select>
+              {errors.esperienzaPesca && <p className="text-red-500 text-xs mt-1.5">{errors.esperienzaPesca}</p>}
+            </div>
+            <div>
+              <label className={labelClass}>{t.participants}</label>
+              <input
+                type="number" name="partecipanti" value={data.partecipanti}
+                onChange={handleChange} min={1} max={4}
+                className={validInputClass}
+              />
+            </div>
           </div>
 
-          <label className="flex items-center gap-3 cursor-pointer group">
-            <input
-              type="checkbox" name="noleggioAttrezzatura"
-              checked={data.noleggioAttrezzatura} onChange={handleChange}
-              className="w-5 h-5 rounded accent-ocean-bright"
-            />
-            <span className="font-semibold text-ocean-deep group-hover:text-ocean-bright transition-colors">
-              {t.rentGear}
-            </span>
-          </label>
-
-          {data.noleggioAttrezzatura && (
+          {data.esperienzaPesca && (
             <div>
-              <label className={labelClass}>{t.gearSets}</label>
-              <input
-                type="number" name="setAttrezzatura" value={data.setAttrezzatura}
-                onChange={handleChange} min={1}
-                className={`${validInputClass} max-w-[10rem]`}
-              />
+              <label className={labelClass}>{t.rentableExtras}</label>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                {(data.esperienzaPesca === 'pesca-canne'
+                  ? [
+                      { name: 'cannaMulinello', label: t.extras.cannaMulinello },
+                      { name: 'esca', label: t.extras.esca },
+                      { name: 'artificiale', label: t.extras.artificiale },
+                      { name: 'actionCam', label: t.extras.actionCam },
+                    ]
+                  : [
+                      { name: 'mascheraBoccaglio', label: t.extras.mascheraBoccaglio },
+                      { name: 'pinne', label: t.extras.pinne },
+                      { name: 'muta3mm', label: t.extras.muta3mm },
+                      { name: 'calzari', label: t.extras.calzari },
+                      { name: 'cinturaPesi', label: t.extras.cinturaPesi },
+                      { name: 'fucileSub', label: t.extras.fucileSub },
+                      { name: 'torciaSub', label: t.extras.torciaSub },
+                      { name: 'actionCam', label: t.extras.actionCam },
+                    ]
+                ).map((field) => (
+                  <div key={field.name}>
+                    <label className={labelClass}>{field.label}</label>
+                    <input
+                      type="number"
+                      name={field.name}
+                      value={data[field.name as keyof FormData] as number}
+                      onChange={handleChange}
+                      min={0}
+                      className={validInputClass}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

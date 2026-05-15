@@ -1,26 +1,126 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Card, PageHeader } from '@/components/admin/Ui'
+import PartnerEditor from '@/components/admin/PartnerEditor'
 import { prisma } from '@/lib/prisma'
+import { calcPartnerPrice, calcCommission } from '@/lib/pricing'
 
 export default async function PartnerDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const partner = await prisma.partner.findUnique({ where: { id }, include: { user: true, bookings: { include: { customer: true, items: { include: { product: true } } } } } })
+  const [partner, products] = await Promise.all([
+    prisma.partner.findUnique({
+      where: { id },
+      include: {
+        user: true,
+        bookings: {
+          include: { customer: true, items: { include: { product: true } } },
+          orderBy: { date: 'desc' },
+          take: 20,
+        },
+      },
+    }),
+    prisma.product.findMany({
+      where: { active: true, category: { in: ['NOLEGGIO', 'ESPERIENZA'] } },
+      include: { partnerPrices: { where: { partnerId: id } } },
+      orderBy: [{ category: 'asc' }, { name: 'asc' }],
+    }),
+  ])
   if (!partner) notFound()
+
+  const totalRevenue = partner.bookings
+    .filter((b) => ['CONFIRMED', 'COMPLETED'].includes(b.status))
+    .reduce((sum, b) => sum + (b.totalPublic ?? 0), 0)
+
   return (
     <>
-      <PageHeader title={partner.companyName} subtitle={`${partner.type} · ${partner.discountCode}`} action={<Link href={`/admin/prodotti?partner=${partner.id}`} className="rounded-full bg-sand px-5 py-3 font-black text-ocean-deep">Manage prices</Link>} />
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card><p className="text-sm font-bold text-[#4A6580]">Total earnings</p><p className="mt-2 text-3xl font-black text-ocean-deep">€{partner.totalEarnings.toFixed(2)}</p></Card>
-        <Card><p className="text-sm font-bold text-[#4A6580]">Pending</p><p className="mt-2 text-3xl font-black text-ocean-deep">€{partner.pendingEarnings.toFixed(2)}</p></Card>
-        <Card><p className="text-sm font-bold text-[#4A6580]">Bookings</p><p className="mt-2 text-3xl font-black text-ocean-deep">{partner.bookings.length}</p></Card>
+      <PageHeader
+        title={partner.companyName}
+        subtitle={`${partner.type} · ${partner.discountCode}`}
+        action={
+          <Link href="/admin/partner" className="rounded-full border border-[#D0E8F7] px-5 py-3 font-black text-[#4A6580]">
+            ← Partners
+          </Link>
+        }
+      />
+
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card><p className="text-sm font-bold text-[#4A6580]">Total bookings</p><p className="mt-2 text-3xl font-black text-ocean-deep">{partner.bookings.length}</p></Card>
+        <Card><p className="text-sm font-bold text-[#4A6580]">Revenue generated</p><p className="mt-2 text-3xl font-black text-ocean-deep">€{totalRevenue.toFixed(0)}</p></Card>
+        <Card><p className="text-sm font-bold text-[#4A6580]">Total commission</p><p className="mt-2 text-3xl font-black text-ocean-deep">€{partner.totalEarnings.toFixed(0)}</p></Card>
+        <Card><p className="text-sm font-bold text-[#4A6580]">Pending payment</p><p className="mt-2 text-3xl font-black text-ocean-deep">€{partner.pendingEarnings.toFixed(0)}</p></Card>
       </div>
-      <Card className="mt-6">
-        <h2 className="mb-4 text-xl font-black text-ocean-deep">Generated bookings</h2>
-        <div className="divide-y divide-[#D0E8F7]">
-          {partner.bookings.map((booking) => <div key={booking.id} className="flex justify-between py-4"><span>{booking.customer.name} · {booking.date.toLocaleDateString('en-GB')}</span><span className="font-black">€{booking.commission?.toFixed(2)}</span></div>)}
+
+      <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_22rem]">
+        <div className="flex flex-col gap-6">
+          <Card>
+            <h2 className="mb-5 text-xl font-black text-ocean-deep">Fee calculation per product</h2>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[#D0E8F7] text-left">
+                  <th className="pb-3 font-bold text-[#4A6580]">Product</th>
+                  <th className="pb-3 text-right font-bold text-[#4A6580]">Public</th>
+                  <th className="pb-3 text-right font-bold text-[#4A6580]">% applied</th>
+                  <th className="pb-3 text-right font-bold text-[#4A6580]">Partner net</th>
+                  <th className="pb-3 text-right font-bold text-ocean-deep">Commission</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#D0E8F7]">
+                {products.map((product) => {
+                  const custom = product.partnerPrices[0]
+                  const partnerNet = calcPartnerPrice(product, partner)
+                  const commission = calcCommission(product, partner)
+                  const pct = custom?.fixedNetPrice != null
+                    ? '(fixed net)'
+                    : `${custom?.commissionPct ?? partner.defaultCommission}%`
+                  return (
+                    <tr key={product.id}>
+                      <td className="py-3 font-bold text-ocean-deep">{product.name}</td>
+                      <td className="py-3 text-right text-[#4A6580]">€{product.basePrice.toFixed(2)}</td>
+                      <td className="py-3 text-right text-[#4A6580]">{pct}</td>
+                      <td className="py-3 text-right text-[#4A6580]">€{partnerNet.toFixed(2)}</td>
+                      <td className="py-3 text-right font-black text-ocean-deep">€{commission.toFixed(2)}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+            <p className="mt-3 text-xs text-[#4A6580]">
+              Commission = public price − partner net. To change per-product pricing go to{' '}
+              <Link href={`/admin/prodotti?partner=${id}`} className="font-bold text-ocean-mid underline">
+                Product catalog
+              </Link>.
+            </p>
+          </Card>
+
+          <Card>
+            <h2 className="mb-4 text-xl font-black text-ocean-deep">Booking history</h2>
+            <div className="divide-y divide-[#D0E8F7]">
+              {partner.bookings.length === 0 && (
+                <p className="py-8 text-center text-[#4A6580]">No bookings yet.</p>
+              )}
+              {partner.bookings.map((booking) => (
+                <Link
+                  key={booking.id}
+                  href={`/admin/prenotazioni/${booking.id}`}
+                  className="-mx-3 flex flex-col gap-1 rounded-lg px-3 py-3 transition hover:bg-ocean-light md:flex-row md:items-center md:justify-between"
+                >
+                  <div>
+                    <p className="font-black text-ocean-deep">{booking.customer.name}</p>
+                    <p className="text-sm text-[#4A6580]">
+                      {booking.date.toLocaleDateString('en-GB')} · {booking.items.map((i) => i.product.name).join(', ')}
+                    </p>
+                  </div>
+                  <span className="shrink-0 font-black text-ocean-deep">
+                    +€{booking.commission?.toFixed(2) ?? '0.00'}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </Card>
         </div>
-      </Card>
+
+        <PartnerEditor partner={{ ...partner, email: partner.user.email }} />
+      </div>
     </>
   )
 }

@@ -7,6 +7,10 @@ import { calcPartnerPrice } from '@/lib/pricing'
 
 type ProductWithPrices = Product & { partnerPrices: PartnerPrice[] }
 
+const inputClass = 'w-full rounded-lg border border-[#D0E8F7] px-3 py-2 text-sm outline-none focus:border-ocean-mid focus:ring-1 focus:ring-ocean-mid'
+
+const EMPTY_NEW = { name: '', category: 'EXTRA' as ProductCategory, basePrice: '', description: '' }
+
 export default function ProductCatalogEditor({
   products: initialProducts,
   partners,
@@ -18,6 +22,10 @@ export default function ProductCatalogEditor({
 }) {
   const router = useRouter()
   const [products, setProducts] = useState(initialProducts)
+  const [newProduct, setNewProduct] = useState(EMPTY_NEW)
+  const [addingNew, setAddingNew] = useState(false)
+  const [savingNew, setSavingNew] = useState(false)
+  const [deletingId, setDeletingId] = useState('')
   const [savingProduct, setSavingProduct] = useState('')
   const [savingPrice, setSavingPrice] = useState('')
   const [message, setMessage] = useState('')
@@ -56,6 +64,40 @@ export default function ProductCatalogEditor({
         }
       })
     )
+  }
+
+  async function createProduct() {
+    if (!newProduct.name.trim()) return
+    setSavingNew(true)
+    setMessage('')
+    const res = await fetch('/api/products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...newProduct, basePrice: Number(newProduct.basePrice) || 0 }),
+    })
+    setSavingNew(false)
+    if (!res.ok) { setMessage('Create failed.'); return }
+    const created = await res.json()
+    setProducts((prev) => [...prev, { ...created, partnerPrices: [] }])
+    setNewProduct(EMPTY_NEW)
+    setAddingNew(false)
+    setMessage('Product created.')
+    router.refresh()
+  }
+
+  async function deleteProduct(id: string) {
+    if (!confirm('Delete this product? If it has bookings it will be refused — deactivate it instead.')) return
+    setDeletingId(id)
+    const res = await fetch(`/api/products/${id}`, { method: 'DELETE' })
+    setDeletingId('')
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      setMessage(body.error ?? 'Delete failed.')
+      return
+    }
+    setProducts((prev) => prev.filter((p) => p.id !== id))
+    setMessage('Product deleted.')
+    router.refresh()
   }
 
   async function saveProduct(product: ProductWithPrices) {
@@ -115,30 +157,40 @@ export default function ProductCatalogEditor({
       {message && <p className="rounded-lg bg-ocean-light px-4 py-3 text-sm font-bold text-ocean-deep">{message}</p>}
 
       <div className="overflow-x-auto">
-        <h2 className="mb-4 text-xl font-black text-ocean-deep">Products</h2>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-xl font-black text-ocean-deep">Products</h2>
+          <button
+            type="button"
+            onClick={() => setAddingNew((v) => !v)}
+            className="rounded-full bg-ocean-deep px-4 py-2 text-sm font-black text-white"
+          >
+            {addingNew ? 'Cancel' : '+ New product'}
+          </button>
+        </div>
         <table className="w-full min-w-[980px] text-left text-sm">
           <thead>
             <tr className="text-[#4A6580]">
-              {['Name', 'Category', 'Public price', 'Status', 'Description', ''].map((head) => (
+              {['Name', 'Category', 'Public price (€)', 'Status', 'Description', '', ''].map((head) => (
                 <th key={head} className="pb-3">{head}</th>
               ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-[#D0E8F7]">
-            {sortedProducts.map((product) => (
-              <tr key={product.id}>
-                <td className="py-4 pr-3">
+            {addingNew && (
+              <tr className="bg-ocean-light/40">
+                <td className="py-3 pr-3">
                   <input
-                    value={product.name}
-                    onChange={(event) => updateProduct(product.id, { name: event.target.value })}
-                    className="w-full rounded-lg border border-[#D0E8F7] px-3 py-2 font-black outline-none focus:border-ocean-bright"
+                    value={newProduct.name}
+                    onChange={(e) => setNewProduct((p) => ({ ...p, name: e.target.value }))}
+                    placeholder="Product name *"
+                    className={inputClass + ' font-black'}
                   />
                 </td>
                 <td className="pr-3">
                   <select
-                    value={product.category}
-                    onChange={(event) => updateProduct(product.id, { category: event.target.value as ProductCategory })}
-                    className="w-full rounded-lg border border-[#D0E8F7] px-3 py-2 outline-none focus:border-ocean-bright"
+                    value={newProduct.category}
+                    onChange={(e) => setNewProduct((p) => ({ ...p, category: e.target.value as ProductCategory }))}
+                    className={inputClass}
                   >
                     <option value="NOLEGGIO">NOLEGGIO</option>
                     <option value="ESPERIENZA">ESPERIENZA</option>
@@ -147,12 +199,60 @@ export default function ProductCatalogEditor({
                 </td>
                 <td className="pr-3">
                   <input
-                    type="number"
-                    min={0}
-                    step="0.01"
+                    type="number" min={0} step="0.01"
+                    value={newProduct.basePrice}
+                    onChange={(e) => setNewProduct((p) => ({ ...p, basePrice: e.target.value }))}
+                    placeholder="0.00"
+                    className={inputClass + ' w-28'}
+                  />
+                </td>
+                <td className="pr-3 text-sm text-[#4A6580]">Active on create</td>
+                <td className="pr-3">
+                  <input
+                    value={newProduct.description}
+                    onChange={(e) => setNewProduct((p) => ({ ...p, description: e.target.value }))}
+                    placeholder="Description"
+                    className={inputClass}
+                  />
+                </td>
+                <td colSpan={2}>
+                  <button
+                    type="button"
+                    onClick={createProduct}
+                    disabled={savingNew || !newProduct.name.trim()}
+                    className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-black text-white disabled:opacity-60"
+                  >
+                    {savingNew ? 'Creating…' : 'Create'}
+                  </button>
+                </td>
+              </tr>
+            )}
+            {sortedProducts.map((product) => (
+              <tr key={product.id}>
+                <td className="py-4 pr-3">
+                  <input
+                    value={product.name}
+                    onChange={(event) => updateProduct(product.id, { name: event.target.value })}
+                    className="w-full rounded-lg border border-[#D0E8F7] px-3 py-2 font-black outline-none focus:border-ocean-mid"
+                  />
+                </td>
+                <td className="pr-3">
+                  <select
+                    value={product.category}
+                    onChange={(event) => updateProduct(product.id, { category: event.target.value as ProductCategory })}
+                    className="w-full rounded-lg border border-[#D0E8F7] px-3 py-2 outline-none focus:border-ocean-mid"
+                  >
+                    <option value="NOLEGGIO">NOLEGGIO</option>
+                    <option value="ESPERIENZA">ESPERIENZA</option>
+                    <option value="EXTRA">EXTRA</option>
+                  </select>
+                </td>
+                <td className="pr-3">
+                  <input
+                    type="number" min={0} step="0.01"
                     value={product.basePrice}
                     onChange={(event) => updateProduct(product.id, { basePrice: Number(event.target.value) })}
-                    className="w-32 rounded-lg border border-[#D0E8F7] px-3 py-2 outline-none focus:border-ocean-bright"
+                    className="w-32 rounded-lg border border-[#D0E8F7] px-3 py-2 outline-none focus:border-ocean-mid"
                   />
                 </td>
                 <td className="pr-3">
@@ -161,7 +261,7 @@ export default function ProductCatalogEditor({
                       type="checkbox"
                       checked={product.active}
                       onChange={(event) => updateProduct(product.id, { active: event.target.checked })}
-                      className="h-4 w-4 accent-ocean-bright"
+                      className="h-4 w-4 accent-ocean-mid"
                     />
                     Active
                   </label>
@@ -171,17 +271,27 @@ export default function ProductCatalogEditor({
                     value={product.description ?? ''}
                     onChange={(event) => updateProduct(product.id, { description: event.target.value })}
                     placeholder="Description"
-                    className="w-full rounded-lg border border-[#D0E8F7] px-3 py-2 outline-none focus:border-ocean-bright"
+                    className="w-full rounded-lg border border-[#D0E8F7] px-3 py-2 outline-none focus:border-ocean-mid"
                   />
                 </td>
-                <td>
+                <td className="pr-2">
                   <button
                     type="button"
                     onClick={() => saveProduct(product)}
                     disabled={savingProduct === product.id}
                     className="rounded-full bg-ocean-deep px-4 py-2 text-xs font-black text-white disabled:opacity-60"
                   >
-                    {savingProduct === product.id ? 'Saving...' : 'Save'}
+                    {savingProduct === product.id ? 'Saving…' : 'Save'}
+                  </button>
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    onClick={() => deleteProduct(product.id)}
+                    disabled={deletingId === product.id}
+                    className="rounded-full border border-red-200 px-3 py-2 text-xs font-black text-red-600 hover:bg-red-50 disabled:opacity-60"
+                  >
+                    {deletingId === product.id ? '…' : 'Delete'}
                   </button>
                 </td>
               </tr>

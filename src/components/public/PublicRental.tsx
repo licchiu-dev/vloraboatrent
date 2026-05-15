@@ -1,7 +1,7 @@
 import HeroVideo from '@/components/HeroVideo'
 import FleetCard from '@/components/FleetCard'
 import BookingForm from '@/components/BookingForm'
-import { Anchor, Clock, Compass, FileText, ShieldCheck, Smile } from 'lucide-react'
+import { Anchor, Clock, Compass, FileText, Fuel, ShieldCheck, Smile } from 'lucide-react'
 
 type Lang = 'en' | 'it' | 'sq' | 'ar' | 'ru' | 'zh'
 
@@ -21,6 +21,9 @@ const copy = {
     includedSub: 'Everything you need for a perfect day',
     includedTitle: 'Included in the rental',
     extrasTitle: 'Extra services',
+    fuelTitle: 'Fuel Policy',
+    fuelText:
+      'Fuel is not included in the rental. Every boat is delivered with a full tank and a reserve fuel can. On return, the tank is refilled and you only pay for the fuel actually used during your trip.',
     processTitle: 'How it works',
     processSub: 'From the pier to the return, our team follows every step.',
     bookTitle: 'Book your boat',
@@ -28,9 +31,8 @@ const copy = {
     day: '/ day',
     capacityLabel: 'seats',
     fleetData: [
-      ['Gommone', 8, 'Mercury 40/70 (2026)', ['Length 5.80 m', 'Maximum speed: to define', 'Average fuel use: to define'], 'from €XX'],
-      ['Gommone Y', 8, 'Mercury 40/70 (2026)', ['Length 5.80 m', 'Maximum speed: to define', 'Average fuel use: to define'], 'from €XX'],
-      ['Barca', 6, 'Mercury 40/70 (2026)', ['Length 5.00 m', 'Maximum speed: to define', 'Average fuel use: to define'], 'from €XX'],
+      ['Joker Boat 580', 8, 'Mercury 40/60 PRO (2026)', ['Length 5.80 m', 'Maximum speed: 30 mph (48 km/h)', 'Average fuel use: 12 liters/hour', 'Navigation style: Stable and comfortable', 'Best for: Families & groups'], 'from €XX', '/images/jokerboat.png'],
+      ['Mingolla Brava 18', 6, 'Mercury 40/60 PRO (2026)', ['Length 5.20 m', 'Maximum speed: 35 mph (56 km/h)', 'Average fuel use: 10 liters/hour', 'Navigation style: Agile and sporty', 'Best for: Couples & small groups'], 'from €XX', '/images/brava16.png'],
     ],
     process: [
       ['09:00', 'Pier meeting', 'Arrive at the pier, meet the team and start check-in.'],
@@ -60,6 +62,9 @@ const copy = {
     includedSub: 'Tutto quello che ti serve per una giornata perfetta',
     includedTitle: 'Inclusi nel noleggio',
     extrasTitle: 'Servizi aggiuntivi',
+    fuelTitle: 'Fuel Policy',
+    fuelText:
+      'Il carburante non è incluso nel noleggio. Tutte le barche vengono consegnate con il pieno e con una tanica di riserva. Al rientro verrà rifatto il pieno e ti verrà chiesto di pagare solo la benzina effettivamente consumata durante il trip.',
     processTitle: 'Come funziona',
     processSub: 'Dal molo al rientro, il nostro team ti accompagna in ogni passaggio.',
     bookTitle: 'Prenota il tuo gommone',
@@ -67,9 +72,8 @@ const copy = {
     day: '/ giornata',
     capacityLabel: 'posti',
     fleetData: [
-      ['Gommone', 8, 'Mercury 40/70 (2026)', ['Lunghezza 5,80 m', 'Velocità massima: da definire', 'Consumo medio: da definire'], 'da €XX'],
-      ['Gommone Y', 8, 'Mercury 40/70 (2026)', ['Lunghezza 5,80 m', 'Velocità massima: da definire', 'Consumo medio: da definire'], 'da €XX'],
-      ['Barca', 6, 'Mercury 40/70 (2026)', ['Lunghezza 5,00 m', 'Velocità massima: da definire', 'Consumo medio: da definire'], 'da €XX'],
+      ['Joker Boat 580', 8, 'Mercury 40/60 PRO (2026)', ['Lunghezza 5,80 m', 'Velocità massima: 30 miglia orarie (48 km/h)', "Consumo medio: 12 litri l'ora", 'Stile di navigazione: stabile e confortevole', 'Ideale per: famiglie e gruppi'], 'da €XX', '/images/jokerboat.png'],
+      ['Mingolla Brava 18', 6, 'Mercury 40/60 PRO (2026)', ['Lunghezza 5,20 m', 'Velocità massima: 35 miglia orarie (56 km/h)', "Consumo medio: 10 litri l'ora", 'Stile di navigazione: agile e sportivo', 'Ideale per: coppie e piccoli gruppi'], 'da €XX', '/images/brava16.png'],
     ],
     process: [
       ['09:00', 'Arrivo al molo', 'Ti presenti al molo, incontri il team e iniziamo il check-in.'],
@@ -99,6 +103,9 @@ const copy = {
     includedSub: 'Gjithçka që të duhet për një ditë perfekte',
     includedTitle: 'Të përfshira në qira',
     extrasTitle: 'Shërbime shtesë',
+    fuelTitle: 'Politika e karburantit',
+    fuelText:
+      'Karburanti nuk përfshihet në qira. Çdo varkë dorëzohet me depozitë të plotë dhe me një bidon rezervë. Në kthim depozita mbushet përsëri dhe paguan vetëm karburantin e përdorur gjatë udhëtimit.',
     processTitle: 'Si funksionon',
     processSub: 'Nga moli deri te kthimi, ekipi ynë të ndjek në çdo hap.',
     bookTitle: 'Rezervo gomonen',
@@ -106,9 +113,8 @@ const copy = {
     day: '/ ditë',
     capacityLabel: 'vende',
     fleetData: [
-      ['Gommone', 8, 'Mercury 40/70 (2026)', ['Gjatësia 5.80 m', 'Shpejtësia maksimale: për t’u përcaktuar', 'Konsumi mesatar: për t’u përcaktuar'], 'nga €XX'],
-      ['Gommone Y', 8, 'Mercury 40/70 (2026)', ['Gjatësia 5.80 m', 'Shpejtësia maksimale: për t’u përcaktuar', 'Konsumi mesatar: për t’u përcaktuar'], 'nga €XX'],
-      ['Barca', 6, 'Mercury 40/70 (2026)', ['Gjatësia 5.00 m', 'Shpejtësia maksimale: për t’u përcaktuar', 'Konsumi mesatar: për t’u përcaktuar'], 'nga €XX'],
+      ['Joker Boat 580', 8, 'Mercury 40/60 PRO (2026)', ['Gjatësia 5.80 m', 'Shpejtësia maksimale: 30 mph (48 km/h)', 'Konsumi mesatar: 12 litra/orë', 'Stili i lundrimit: i qëndrueshëm dhe komod', 'Më e mira për: familje dhe grupe'], 'nga €XX', '/images/jokerboat.png'],
+      ['Mingolla Brava 18', 6, 'Mercury 40/60 PRO (2026)', ['Gjatësia 5.20 m', 'Shpejtësia maksimale: 35 mph (56 km/h)', 'Konsumi mesatar: 10 litra/orë', 'Stili i lundrimit: e shkathët dhe sportive', 'Më e mira për: çifte dhe grupe të vogla'], 'nga €XX', '/images/brava16.png'],
     ],
     process: [
       ['09:00', 'Takim në mol', 'Mbërrin në mol, takon ekipin dhe nis check-in.'],
@@ -138,6 +144,9 @@ const copy = {
     includedSub: 'كل ما تحتاج إليه ليوم مثالي',
     includedTitle: 'مشمول في التأجير',
     extrasTitle: 'خدمات إضافية',
+    fuelTitle: 'سياسة الوقود',
+    fuelText:
+      'الوقود غير مشمول في الإيجار. يتم تسليم كل قارب بخزان ممتلئ وعبوة احتياطية. عند العودة تتم إعادة تعبئة الخزان وتدفع فقط ثمن الوقود المستخدم فعليا خلال الرحلة.',
     processTitle: 'كيف تعمل التجربة',
     processSub: 'من الرصيف حتى العودة، فريقنا يرافقك في كل خطوة.',
     bookTitle: 'احجز قاربك',
@@ -145,9 +154,8 @@ const copy = {
     day: '/ يوم',
     capacityLabel: 'مقاعد',
     fleetData: [
-      ['Gommone', 8, 'Mercury 40/70 (2026)', ['الطول 5.80 م', 'السرعة القصوى: لاحقا', 'متوسط الاستهلاك: لاحقا'], 'من €XX'],
-      ['Gommone Y', 8, 'Mercury 40/70 (2026)', ['الطول 5.80 م', 'السرعة القصوى: لاحقا', 'متوسط الاستهلاك: لاحقا'], 'من €XX'],
-      ['Barca', 6, 'Mercury 40/70 (2026)', ['الطول 5.00 م', 'السرعة القصوى: لاحقا', 'متوسط الاستهلاك: لاحقا'], 'من €XX'],
+      ['Joker Boat 580', 8, 'Mercury 40/60 PRO (2026)', ['الطول 5.80 م', 'السرعة القصوى: 30 ميل/س (48 كم/س)', 'متوسط الاستهلاك: 12 لتر/ساعة', 'أسلوب الملاحة: ثابت ومريح', 'الأفضل لـ: العائلات والمجموعات'], 'من €XX', '/images/jokerboat.png'],
+      ['Mingolla Brava 18', 6, 'Mercury 40/60 PRO (2026)', ['الطول 5.20 م', 'السرعة القصوى: 35 ميل/س (56 كم/س)', 'متوسط الاستهلاك: 10 لتر/ساعة', 'أسلوب الملاحة: رشيق ورياضي', 'الأفضل لـ: الأزواج والمجموعات الصغيرة'], 'من €XX', '/images/brava16.png'],
     ],
     process: [
       ['09:00', 'الوصول إلى الرصيف', 'تصل إلى الرصيف وتلتقي بالفريق ونبدأ تسجيل الدخول.'],
@@ -177,6 +185,9 @@ const copy = {
     includedSub: 'Все, что нужно для идеального дня',
     includedTitle: 'Включено в аренду',
     extrasTitle: 'Дополнительные услуги',
+    fuelTitle: 'Топливная политика',
+    fuelText:
+      'Топливо не включено в аренду. Каждая лодка передается с полным баком и резервной канистрой. По возвращении бак снова заправляется, и вы оплачиваете только фактически израсходованное за поездку топливо.',
     processTitle: 'Как это работает',
     processSub: 'От причала до возвращения команда сопровождает каждый шаг.',
     bookTitle: 'Забронируйте лодку',
@@ -184,9 +195,8 @@ const copy = {
     day: '/ день',
     capacityLabel: 'мест',
     fleetData: [
-      ['Gommone', 8, 'Mercury 40/70 (2026)', ['Длина 5.80 м', 'Максимальная скорость: уточняется', 'Средний расход: уточняется'], 'от €XX'],
-      ['Gommone Y', 8, 'Mercury 40/70 (2026)', ['Длина 5.80 м', 'Максимальная скорость: уточняется', 'Средний расход: уточняется'], 'от €XX'],
-      ['Barca', 6, 'Mercury 40/70 (2026)', ['Длина 5.00 м', 'Максимальная скорость: уточняется', 'Средний расход: уточняется'], 'от €XX'],
+      ['Joker Boat 580', 8, 'Mercury 40/60 PRO (2026)', ['Длина 5.80 м', 'Максимальная скорость: 30 миль/ч (48 км/ч)', 'Средний расход: 12 л/ч', 'Стиль хода: устойчивый и комфортный', 'Лучше всего для: семей и групп'], 'от €XX', '/images/jokerboat.png'],
+      ['Mingolla Brava 18', 6, 'Mercury 40/60 PRO (2026)', ['Длина 5.20 м', 'Максимальная скорость: 35 миль/ч (56 км/ч)', 'Средний расход: 10 л/ч', 'Стиль хода: маневренный и спортивный', 'Лучше всего для: пар и небольших групп'], 'от €XX', '/images/brava16.png'],
     ],
     process: [
       ['09:00', 'Встреча у причала', 'Вы приходите к причалу, встречаете команду и проходите check-in.'],
@@ -216,6 +226,9 @@ const copy = {
     includedSub: '完美一天所需的一切',
     includedTitle: '租赁包含',
     extrasTitle: '额外服务',
+    fuelTitle: '燃油政策',
+    fuelText:
+      '租赁价格不含燃油。每艘船交付时都配有满箱燃油和一桶备用燃油。返航后会重新加满油箱，你只需支付本次行程实际消耗的燃油。',
     processTitle: '流程',
     processSub: '从码头到返航，我们的团队会协助每一步。',
     bookTitle: '预订你的船',
@@ -223,9 +236,8 @@ const copy = {
     day: '/ 天',
     capacityLabel: '座位',
     fleetData: [
-      ['Gommone', 8, 'Mercury 40/70 (2026)', ['长度 5.80 m', '最高速度：待确认', '平均油耗：待确认'], '起价 €XX'],
-      ['Gommone Y', 8, 'Mercury 40/70 (2026)', ['长度 5.80 m', '最高速度：待确认', '平均油耗：待确认'], '起价 €XX'],
-      ['Barca', 6, 'Mercury 40/70 (2026)', ['长度 5.00 m', '最高速度：待确认', '平均油耗：待确认'], '起价 €XX'],
+      ['Joker Boat 580', 8, 'Mercury 40/60 PRO (2026)', ['长度 5.80 m', '最高速度：30 mph（48 km/h）', '平均油耗：12 升/小时', '航行风格：稳定舒适', '适合：家庭和团体'], '起价 €XX', '/images/jokerboat.png'],
+      ['Mingolla Brava 18', 6, 'Mercury 40/60 PRO (2026)', ['长度 5.20 m', '最高速度：35 mph（56 km/h）', '平均油耗：10 升/小时', '航行风格：灵活运动', '适合：情侣和小团体'], '起价 €XX', '/images/brava16.png'],
     ],
     process: [
       ['09:00', '码头集合', '到达码头，与团队会合并开始 check-in。'],
@@ -327,10 +339,11 @@ export default function PublicRental({ lang, startingPrice }: { lang: Lang; star
             <h2 className="text-4xl md:text-5xl font-black text-ocean-deep tracking-tight mb-3">{t.fleet}</h2>
             <p className="text-[#4A6580] text-xl">{t.fleetSub}</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {t.fleetData.map(([name, capacity, motorization, features, price]) => (
+          <div className="mx-auto grid max-w-4xl grid-cols-1 gap-8 md:grid-cols-2">
+            {t.fleetData.map(([name, capacity, motorization, features, price, imageSrc]) => (
               <FleetCard
                 key={name as string}
+                imageSrc={imageSrc as string}
                 name={name as string}
                 capacity={capacity as number}
                 motorization={motorization as string}
@@ -367,6 +380,20 @@ export default function PublicRental({ lang, startingPrice }: { lang: Lang; star
                   </li>
                 ))}
               </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white px-6 py-20">
+        <div className="mx-auto max-w-4xl">
+          <div className="flex flex-col gap-5 rounded-3xl border-2 border-[#D0E8F7] bg-white p-8 shadow-sm md:flex-row md:items-start">
+            <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl bg-sand text-ocean-deep">
+              <Fuel size={28} strokeWidth={2.3} />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black tracking-tight text-ocean-deep">{t.fuelTitle}</h2>
+              <p className="mt-3 text-lg leading-relaxed text-[#4A6580]">{t.fuelText}</p>
             </div>
           </div>
         </div>

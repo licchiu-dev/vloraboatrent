@@ -21,19 +21,12 @@ export default function FleetCard({
 }: FleetCardProps) {
   return (
     <div className="bg-white rounded-2xl border border-[#D0E8F7] overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-ocean-bright/10 hover:border-ocean-bright flex flex-col">
-      {/* Image placeholder */}
       <div className="relative h-48 bg-gradient-to-br from-ocean-deep to-ocean-bright flex items-center justify-center overflow-hidden">
-        {/*
-          TODO: Sostituire con immagine reale della barca.
-          Aggiungere l'immagine in /public/images/ e decommentare:
-
-          <img
-            src={imageSrc}
-            alt={name}
-            className="w-full h-full object-cover"
-          />
-        */}
-        <span className="text-5xl drop-shadow-xl">⛵</span>
+        {imageSrc ? (
+          <img src={imageSrc} alt={name} className="h-full w-full object-cover" />
+        ) : (
+          <span className="text-5xl drop-shadow-xl">⛵</span>
+        )}
       </div>
 
       <div className="p-6 flex flex-col flex-1">

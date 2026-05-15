@@ -1,5 +1,8 @@
 import { notFound } from 'next/navigation'
 import AssetAssignmentEditor from '@/components/admin/AssetAssignmentEditor'
+import BookingItemsEditor from '@/components/admin/BookingItemsEditor'
+import BookingStatusEditor from '@/components/admin/BookingStatusEditor'
+import DeleteBookingButton from '@/components/admin/DeleteBookingButton'
 import { Badge, Card, PageHeader } from '@/components/admin/Ui'
 import { prisma } from '@/lib/prisma'
 
@@ -32,17 +35,7 @@ export default async function BookingDetail({ params }: { params: Promise<{ id: 
             </div>
           </div>
 
-          <div className="mt-8">
-            <h2 className="mb-3 text-xl font-black text-ocean-deep">Products</h2>
-            <div className="divide-y divide-[#D0E8F7]">
-              {booking.items.map((item) => (
-                <div key={item.id} className="flex justify-between py-3">
-                  <span>{item.product.name} x{item.quantity}</span>
-                  <span className="font-black">€{item.total.toFixed(2)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          <BookingItemsEditor bookingId={booking.id} initialItems={booking.items} />
         </Card>
 
         <Card>
@@ -59,9 +52,15 @@ export default async function BookingDetail({ params }: { params: Promise<{ id: 
             <p className="mt-4 font-black text-ocean-deep">Internal notes</p>
             <p className="mt-2">{booking.internalNotes ?? 'No internal notes.'}</p>
           </div>
+          <BookingStatusEditor
+            bookingId={booking.id}
+            initialStatus={booking.status}
+            initialPaymentMethod={booking.paymentMethod}
+          />
           <AssetAssignmentEditor bookingId={booking.id} initialAssetIds={booking.fleetAssignments.map((assignment) => assignment.fleetAssetId)} />
           <button className="mt-5 w-full rounded-full bg-ocean-deep px-4 py-3 font-black text-white">Send confirmation email</button>
           <p className="mt-2 text-xs text-[#8AACCC]">// TODO: EMAIL</p>
+          <DeleteBookingButton bookingId={booking.id} />
         </Card>
       </div>
     </>

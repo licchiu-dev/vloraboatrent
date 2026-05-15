@@ -302,69 +302,123 @@ export default function ProductCatalogEditor({
 
       <div className="overflow-x-auto">
         <div className="mb-4 flex flex-col justify-between gap-3 md:flex-row md:items-center">
-          <h2 className="text-xl font-black text-ocean-deep">Partner prices</h2>
+          <div>
+            <h2 className="text-xl font-black text-ocean-deep">Partner fees</h2>
+            <p className="mt-0.5 text-xs text-[#4A6580]">
+              For each product choose the fee type: default %, custom %, or fixed net price.
+            </p>
+          </div>
           <form>
-            <select name="partner" defaultValue={selectedPartner?.id} className="rounded-lg border border-[#D0E8F7] px-3 py-2">
+            <select name="partner" defaultValue={selectedPartner?.id} className="rounded-lg border border-[#D0E8F7] px-3 py-2 text-sm">
               {partners.map((partner) => <option key={partner.id} value={partner.id}>{partner.companyName}</option>)}
             </select>
             <button className="ml-2 rounded-lg bg-ocean-deep px-3 py-2 text-sm font-bold text-white">Load</button>
           </form>
         </div>
-        <table className="w-full min-w-[900px] text-left text-sm">
-          <thead>
-            <tr className="text-[#4A6580]">
-              {['Product', 'Public price', 'Default %', 'Custom %', 'Fixed net', 'Result', ''].map((head) => (
-                <th key={head} className="pb-3">{head}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[#D0E8F7]">
-            {sortedProducts.map((product) => {
-              const custom = product.partnerPrices.find((price) => price.partnerId === selectedPartner?.id)
-              const result = selectedPartner ? calcPartnerPrice(product, selectedPartner) : product.basePrice
-              return (
-                <tr key={product.id}>
-                  <td className="py-4 font-black">{product.name}</td>
-                  <td>€{product.basePrice.toFixed(2)}</td>
-                  <td>{selectedPartner?.defaultCommission ?? 0}%</td>
-                  <td>
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={custom?.commissionPct ?? ''}
-                      placeholder="-"
-                      onChange={(event) => updatePartnerPrice(product.id, { commissionPct: event.target.value === '' ? null : Number(event.target.value), fixedNetPrice: null })}
-                      className="w-28 rounded-lg border border-[#D0E8F7] px-3 py-2 outline-none focus:border-ocean-bright"
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={custom?.fixedNetPrice ?? ''}
-                      placeholder="-"
-                      onChange={(event) => updatePartnerPrice(product.id, { fixedNetPrice: event.target.value === '' ? null : Number(event.target.value), commissionPct: null })}
-                      className="w-28 rounded-lg border border-[#D0E8F7] px-3 py-2 outline-none focus:border-ocean-bright"
-                    />
-                  </td>
-                  <td className="font-black text-ocean-deep">€{result.toFixed(2)}</td>
-                  <td>
-                    <button
-                      type="button"
-                      onClick={() => savePartnerPrice(product)}
-                      disabled={savingPrice === product.id || !selectedPartner}
-                      className="rounded-full bg-ocean-deep px-4 py-2 text-xs font-black text-white disabled:opacity-60"
-                    >
-                      {savingPrice === product.id ? 'Saving...' : 'Save'}
-                    </button>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+        {!selectedPartner ? (
+          <p className="py-8 text-center text-sm text-[#4A6580]">No partners yet.</p>
+        ) : (
+          <table className="w-full min-w-[820px] text-left text-sm">
+            <thead>
+              <tr className="border-b border-[#D0E8F7] text-[#4A6580]">
+                <th className="pb-3">Product</th>
+                <th className="pb-3 text-right">Public (€)</th>
+                <th className="pb-3">Fee type</th>
+                <th className="pb-3">Value</th>
+                <th className="pb-3 text-right">Partner pays</th>
+                <th className="pb-3 text-right">You earn</th>
+                <th className="pb-3"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#D0E8F7]">
+              {sortedProducts.map((product) => {
+                const custom = product.partnerPrices.find((p) => p.partnerId === selectedPartner.id)
+
+                // Derive current fee type from stored data
+                const feeType: 'default' | 'pct' | 'fixed' =
+                  custom?.fixedNetPrice != null ? 'fixed'
+                  : custom?.commissionPct != null ? 'pct'
+                  : 'default'
+
+                const partnerNet = calcPartnerPrice(product, selectedPartner)
+                const commission = product.basePrice - partnerNet
+
+                return (
+                  <tr key={product.id}>
+                    <td className="py-3 pr-3 font-bold text-ocean-deep">{product.name}</td>
+                    <td className="py-3 pr-3 text-right text-[#4A6580]">€{product.basePrice.toFixed(2)}</td>
+
+                    {/* Fee type selector */}
+                    <td className="py-3 pr-3">
+                      <select
+                        value={feeType}
+                        onChange={(e) => {
+                          const t = e.target.value as 'default' | 'pct' | 'fixed'
+                          if (t === 'default') {
+                            updatePartnerPrice(product.id, { commissionPct: null, fixedNetPrice: null })
+                          } else if (t === 'pct') {
+                            updatePartnerPrice(product.id, { commissionPct: selectedPartner.defaultCommission, fixedNetPrice: null })
+                          } else {
+                            updatePartnerPrice(product.id, { fixedNetPrice: product.basePrice, commissionPct: null })
+                          }
+                        }}
+                        className="rounded-lg border border-[#D0E8F7] px-2 py-2 text-sm outline-none focus:border-ocean-mid"
+                      >
+                        <option value="default">Default ({selectedPartner.defaultCommission}%)</option>
+                        <option value="pct">Custom %</option>
+                        <option value="fixed">Fixed net price (€)</option>
+                      </select>
+                    </td>
+
+                    {/* Value input — adapts to fee type */}
+                    <td className="py-3 pr-3">
+                      {feeType === 'default' && (
+                        <span className="text-[#4A6580]">—</span>
+                      )}
+                      {feeType === 'pct' && (
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number" min={0} max={100} step="0.1"
+                            value={custom?.commissionPct ?? selectedPartner.defaultCommission}
+                            onChange={(e) => updatePartnerPrice(product.id, { commissionPct: Number(e.target.value), fixedNetPrice: null })}
+                            className="w-20 rounded-lg border border-[#D0E8F7] px-2 py-2 outline-none focus:border-ocean-mid"
+                          />
+                          <span className="text-[#4A6580]">%</span>
+                        </div>
+                      )}
+                      {feeType === 'fixed' && (
+                        <div className="flex items-center gap-1">
+                          <span className="text-[#4A6580]">€</span>
+                          <input
+                            type="number" min={0} max={product.basePrice} step="0.01"
+                            value={custom?.fixedNetPrice ?? product.basePrice}
+                            onChange={(e) => updatePartnerPrice(product.id, { fixedNetPrice: Number(e.target.value), commissionPct: null })}
+                            className="w-24 rounded-lg border border-[#D0E8F7] px-2 py-2 outline-none focus:border-ocean-mid"
+                          />
+                        </div>
+                      )}
+                    </td>
+
+                    {/* Results */}
+                    <td className="py-3 pr-3 text-right font-bold text-[#4A6580]">€{partnerNet.toFixed(2)}</td>
+                    <td className="py-3 pr-3 text-right font-black text-ocean-deep">€{commission.toFixed(2)}</td>
+
+                    <td className="py-3">
+                      <button
+                        type="button"
+                        onClick={() => savePartnerPrice(product)}
+                        disabled={savingPrice === product.id}
+                        className="rounded-full bg-ocean-deep px-4 py-2 text-xs font-black text-white disabled:opacity-60"
+                      >
+                        {savingPrice === product.id ? 'Saving…' : 'Save'}
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   )

@@ -8,8 +8,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 function LoginForm() {
   const router = useRouter()
   const params = useSearchParams()
-  const [email, setEmail] = useState('admin@example.com')
-  const [password, setPassword] = useState('admin123')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -64,10 +64,6 @@ function LoginForm() {
           >
             {loading ? 'Signing in...' : 'Sign in'}
           </button>
-
-          <p className="mt-5 text-xs text-[#4A6580]">
-            Seed users: admin@example.com, socio@example.com, mario.partner@example.com. Password: admin123.
-          </p>
         </form>
       </div>
     </div>

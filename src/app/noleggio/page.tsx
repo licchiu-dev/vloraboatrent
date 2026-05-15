@@ -4,8 +4,16 @@ import PublicRental from '@/components/public/PublicRental'
 import { formatEuroPrice, getMinimumProductPrice } from '@/lib/public-pricing'
 
 export const metadata: Metadata = {
-  title: 'Boat Rentals — VLORA RENT A BOAT',
-  description: 'Rent a license-free boat and discover the most beautiful coves. Modern fleet, briefing included.',
+  title: 'Boat Rental Vlora Albania — No License Required',
+  description:
+    'Rent a boat in Vlora, Albania without a license. Explore the Albanian Riviera, hidden coves, and crystal-clear waters. Full briefing included. Book online.',
+  alternates: { canonical: 'https://vloraboatrent.com/noleggio' },
+  openGraph: {
+    title: 'Boat Rental Vlora Albania — No License Required',
+    description:
+      'Rent a boat in Vlora, Albania without a license. Explore the Albanian Riviera, hidden coves, and crystal-clear waters.',
+    url: 'https://vloraboatrent.com/noleggio',
+  },
 }
 
 export default async function NoleggioPage() {

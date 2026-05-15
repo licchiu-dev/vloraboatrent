@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs'
 import { apiRequireRole } from '@/lib/guards'
 import { prisma } from '@/lib/prisma'
 
@@ -15,16 +16,21 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       discountCode: body.discountCode,
       defaultCommission: Number(body.defaultCommission),
       phone: body.phone ?? null,
-      pendingEarnings: body.markPaid ? 0 : undefined,
     },
     include: { user: true },
   })
 
-  if (body.email) {
-    await prisma.user.update({
-      where: { id: partner.userId },
-      data: { email: body.email, name: body.name ?? partner.user.name },
-    })
+  const userPatch: Record<string, unknown> = {}
+  if (body.email) userPatch.email = body.email
+  if (body.name) userPatch.name = body.name
+  if (body.newPassword) {
+    if (body.newPassword.length < 8) {
+      return Response.json({ error: 'Password must be at least 8 characters.' }, { status: 400 })
+    }
+    userPatch.password = await bcrypt.hash(body.newPassword, 10)
+  }
+  if (Object.keys(userPatch).length > 0) {
+    await prisma.user.update({ where: { id: partner.userId }, data: userPatch })
   }
 
   return Response.json(partner)

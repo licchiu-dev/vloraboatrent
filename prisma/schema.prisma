@@ -62,19 +62,31 @@ model User {
 }
 
 model Partner {
-  id                String         @id @default(cuid())
-  userId            String         @unique
-  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String               @id @default(cuid())
+  userId            String               @unique
+  user              User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   companyName       String
   type              PartnerType
-  discountCode      String         @unique
+  discountCode      String               @unique
   defaultCommission Float
-  totalEarnings     Float          @default(0)
-  pendingEarnings   Float          @default(0)
+  totalEarnings     Float                @default(0)
+  pendingEarnings   Float                @default(0)
   bookings          Booking[]
   partnerPrices     PartnerPrice[]
+  payments          CommissionPayment[]
   phone             String?
-  createdAt         DateTime       @default(now())
+  createdAt         DateTime             @default(now())
+}
+
+model CommissionPayment {
+  id        String   @id @default(cuid())
+  partnerId String
+  partner   Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  amount    Float
+  date      DateTime
+  method    String   // CASH | BANK_TRANSFER | CARD | PAYPAL | OTHER
+  notes     String?
+  createdAt DateTime @default(now())
 }
 
 model Product {

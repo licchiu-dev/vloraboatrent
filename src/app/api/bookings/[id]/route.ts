@@ -2,6 +2,24 @@ import { apiRequireRole } from '@/lib/guards'
 import { prisma } from '@/lib/prisma'
 import { roundMoney } from '@/lib/pricing'
 
+// Recalculates totalEarnings and pendingEarnings for a partner from their bookings and payments.
+async function syncPartnerEarnings(partnerId: string) {
+  const [bookings, payments] = await Promise.all([
+    prisma.booking.findMany({
+      where: { partnerId, status: { in: ['CONFIRMED', 'COMPLETED'] } },
+      select: { commission: true },
+    }),
+    prisma.commissionPayment.findMany({
+      where: { partnerId },
+      select: { amount: true },
+    }),
+  ])
+  const totalEarnings = roundMoney(bookings.reduce((s, b) => s + (b.commission ?? 0), 0))
+  const paid = roundMoney(payments.reduce((s, p) => s + p.amount, 0))
+  const pendingEarnings = roundMoney(Math.max(0, totalEarnings - paid))
+  await prisma.partner.update({ where: { id: partnerId }, data: { totalEarnings, pendingEarnings } })
+}
+
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const guard = await apiRequireRole(['SUPERADMIN', 'ADMIN', 'PARTNER'])
   if ('error' in guard) return guard.error
@@ -24,6 +42,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         status: body.status,
       },
     })
+    // Sync partner totals if status changed (e.g. PENDING→CONFIRMED)
+    if (body.status && booking.partnerId) await syncPartnerEarnings(booking.partnerId)
     return Response.json(updated)
   }
 
@@ -84,6 +104,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       discountCode: body.discountCode !== undefined ? (body.discountCode || null) : undefined,
     },
   })
+
+  // Sync partner totals whenever commission/status/partner changes
+  const affectsEarnings = body.commission !== undefined || body.status !== undefined || body.partnerId !== undefined
+  if (affectsEarnings && booking.partnerId) await syncPartnerEarnings(booking.partnerId)
+
   return Response.json(booking)
 }
 
@@ -91,6 +116,8 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   const guard = await apiRequireRole(['SUPERADMIN', 'ADMIN'])
   if ('error' in guard) return guard.error
   const { id } = await params
+  const booking = await prisma.booking.findUnique({ where: { id }, select: { partnerId: true } })
   await prisma.booking.delete({ where: { id } })
+  if (booking?.partnerId) await syncPartnerEarnings(booking.partnerId)
   return Response.json({ ok: true })
 }

@@ -20,6 +20,7 @@ export default async function PartnerDetail({ params }: { params: Promise<{ id: 
           orderBy: { date: 'desc' },
           take: 20,
         },
+        payments: { orderBy: { date: 'desc' } },
       },
     }),
     prisma.product.findMany({
@@ -123,7 +124,11 @@ export default async function PartnerDetail({ params }: { params: Promise<{ id: 
         </div>
 
         {canEdit ? (
-          <PartnerEditor partner={{ ...partner, email: partner.user.email }} />
+          <PartnerEditor partner={{
+            ...partner,
+            email: partner.user.email,
+            payments: partner.payments.map((p) => ({ ...p, date: p.date.toISOString() })),
+          }} />
         ) : (
           <div className="rounded-lg border border-[#D0E8F7] bg-white p-5 shadow-sm">
             <p className="text-xs font-bold uppercase tracking-widest text-[#8AACCC]">Read-only</p>

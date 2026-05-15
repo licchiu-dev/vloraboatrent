@@ -2,7 +2,15 @@
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { Card } from '@/components/admin/Ui'
+import { Badge, Card } from '@/components/admin/Ui'
+
+type Payment = {
+  id: string
+  amount: number
+  date: string
+  method: string
+  notes: string | null
+}
 
 type PartnerData = {
   id: string
@@ -13,13 +21,24 @@ type PartnerData = {
   defaultCommission: number
   phone: string | null
   pendingEarnings: number
+  payments: Payment[]
 }
 
 const inputClass =
   'mt-0.5 w-full rounded-lg border border-[#D0E8F7] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ocean-mid'
 
+const METHOD_LABELS: Record<string, string> = {
+  CASH: 'Cash',
+  BANK_TRANSFER: 'Bank transfer',
+  CARD: 'Card',
+  PAYPAL: 'PayPal',
+  OTHER: 'Other',
+}
+
 export default function PartnerEditor({ partner }: { partner: PartnerData }) {
   const router = useRouter()
+
+  // --- edit form ---
   const [companyName, setCompanyName] = useState(partner.companyName)
   const [email, setEmail] = useState(partner.email)
   const [type, setType] = useState(partner.type)
@@ -27,10 +46,29 @@ export default function PartnerEditor({ partner }: { partner: PartnerData }) {
   const [commission, setCommission] = useState(partner.defaultCommission.toString())
   const [phone, setPhone] = useState(partner.phone ?? '')
   const [saving, setSaving] = useState(false)
-  const [deleting, setDeleting] = useState(false)
-  const [confirmDelete, setConfirmDelete] = useState(false)
   const [message, setMessage] = useState('')
   const [isError, setIsError] = useState(false)
+
+  // --- password change ---
+  const [newPassword, setNewPassword] = useState('')
+  const [savingPwd, setSavingPwd] = useState(false)
+  const [pwdMessage, setPwdMessage] = useState('')
+  const [pwdError, setPwdError] = useState(false)
+
+  // --- payment form ---
+  const [payAmount, setPayAmount] = useState(partner.pendingEarnings.toFixed(2))
+  const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10))
+  const [payMethod, setPayMethod] = useState('CASH')
+  const [payNotes, setPayNotes] = useState('')
+  const [savingPay, setSavingPay] = useState(false)
+  const [payMessage, setPayMessage] = useState('')
+  const [payError, setPayError] = useState(false)
+  const [payments, setPayments] = useState<Payment[]>(partner.payments)
+  const [pendingEarnings, setPendingEarnings] = useState(partner.pendingEarnings)
+
+  // --- delete ---
+  const [deleting, setDeleting] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   async function save() {
     setSaving(true)
@@ -41,45 +79,67 @@ export default function PartnerEditor({ partner }: { partner: PartnerData }) {
       body: JSON.stringify({ companyName, email, type, discountCode: code, defaultCommission: commission, phone }),
     })
     setSaving(false)
-    if (!res.ok) {
-      setIsError(true)
-      setMessage('Save failed.')
-      return
-    }
+    if (!res.ok) { setIsError(true); setMessage('Save failed.'); return }
     setIsError(false)
     setMessage('Saved.')
     router.refresh()
   }
 
-  async function markPaid() {
-    setSaving(true)
+  async function savePassword() {
+    if (!newPassword) return
+    setSavingPwd(true)
+    setPwdMessage('')
     const res = await fetch(`/api/partners/${partner.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ markPaid: true }),
+      body: JSON.stringify({ newPassword }),
     })
-    setSaving(false)
-    if (res.ok) {
-      setMessage('Marked as paid.')
-      router.refresh()
+    setSavingPwd(false)
+    const body = await res.json().catch(() => ({}))
+    if (!res.ok) { setPwdError(true); setPwdMessage(body.error ?? 'Failed.'); return }
+    setPwdError(false)
+    setPwdMessage('Password updated.')
+    setNewPassword('')
+  }
+
+  async function recordPayment() {
+    setSavingPay(true)
+    setPayMessage('')
+    const res = await fetch(`/api/partners/${partner.id}/payments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: payAmount, date: payDate, method: payMethod, notes: payNotes }),
+    })
+    setSavingPay(false)
+    if (!res.ok) {
+      const b = await res.json().catch(() => ({}))
+      setPayError(true)
+      setPayMessage(b.error ?? 'Payment failed.')
+      return
     }
+    const payment = await res.json()
+    setPayError(false)
+    setPayMessage('Payment recorded.')
+    setPayments((prev) => [{ ...payment, date: payment.date }, ...prev])
+    const newPending = Math.max(0, pendingEarnings - Number(payAmount))
+    setPendingEarnings(newPending)
+    setPayAmount(newPending.toFixed(2))
+    setPayNotes('')
+    router.refresh()
   }
 
   async function deletePartner() {
     setDeleting(true)
     const res = await fetch(`/api/partners/${partner.id}`, { method: 'DELETE' })
     setDeleting(false)
-    if (!res.ok) {
-      setIsError(true)
-      setMessage('Delete failed.')
-      return
-    }
+    if (!res.ok) { setIsError(true); setMessage('Delete failed.'); return }
     router.push('/admin/partner')
     router.refresh()
   }
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Edit info */}
       <Card>
         <h2 className="mb-4 text-xl font-black text-ocean-deep">Edit partner</h2>
         <div className="grid gap-3">
@@ -115,67 +175,140 @@ export default function PartnerEditor({ partner }: { partner: PartnerData }) {
           </label>
         </div>
         <div className="mt-4 flex items-center gap-3">
-          <button
-            type="button"
-            onClick={save}
-            disabled={saving}
-            className="rounded-full bg-ocean-deep px-5 py-2.5 text-sm font-black text-white disabled:opacity-60"
-          >
+          <button type="button" onClick={save} disabled={saving}
+            className="rounded-full bg-ocean-deep px-5 py-2.5 text-sm font-black text-white disabled:opacity-60">
             {saving ? 'Saving…' : 'Save changes'}
           </button>
-          {message && (
-            <p className={`text-sm font-bold ${isError ? 'text-red-600' : 'text-ocean-mid'}`}>{message}</p>
-          )}
+          {message && <p className={`text-sm font-bold ${isError ? 'text-red-600' : 'text-ocean-mid'}`}>{message}</p>}
         </div>
       </Card>
 
-      {partner.pendingEarnings > 0 && (
-        <Card>
-          <h2 className="text-xl font-black text-ocean-deep">Commission payment</h2>
-          <p className="mt-2 text-sm text-[#4A6580]">
-            Pending: <span className="font-black text-ocean-deep">€{partner.pendingEarnings.toFixed(2)}</span>
-          </p>
-          <button
-            type="button"
-            onClick={markPaid}
-            disabled={saving}
-            className="mt-4 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-black text-white disabled:opacity-60"
-          >
-            Mark as paid
+      {/* Password change */}
+      <Card>
+        <h2 className="mb-3 text-xl font-black text-ocean-deep">Change password</h2>
+        <label className="flex flex-col text-sm font-bold text-ocean-deep">
+          New password
+          <input
+            type="password"
+            placeholder="Min 8 characters"
+            className={inputClass}
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+          />
+        </label>
+        <div className="mt-3 flex items-center gap-3">
+          <button type="button" onClick={savePassword} disabled={savingPwd || !newPassword}
+            className="rounded-full bg-ocean-deep px-5 py-2.5 text-sm font-black text-white disabled:opacity-60">
+            {savingPwd ? 'Updating…' : 'Update password'}
           </button>
-        </Card>
-      )}
+          {pwdMessage && <p className={`text-sm font-bold ${pwdError ? 'text-red-600' : 'text-ocean-mid'}`}>{pwdMessage}</p>}
+        </div>
+      </Card>
 
+      {/* Commission payments */}
+      <Card>
+        <h2 className="text-xl font-black text-ocean-deep">Commission payments</h2>
+        <p className="mt-1 text-sm text-[#4A6580]">
+          Pending: <span className="font-black text-ocean-deep">€{pendingEarnings.toFixed(2)}</span>
+        </p>
+
+        {pendingEarnings > 0 && (
+          <div className="mt-4 grid gap-3 rounded-lg bg-ocean-light/50 p-4">
+            <p className="text-sm font-black text-ocean-deep">Record a payment</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="flex flex-col text-sm font-bold text-ocean-deep">
+                Amount (€)
+                <input type="number" min={0} step="0.01" className={inputClass} value={payAmount}
+                  onChange={(e) => setPayAmount(e.target.value)} />
+              </label>
+              <label className="flex flex-col text-sm font-bold text-ocean-deep">
+                Date
+                <input type="date" className={inputClass} value={payDate}
+                  onChange={(e) => setPayDate(e.target.value)} />
+              </label>
+            </div>
+            <label className="flex flex-col text-sm font-bold text-ocean-deep">
+              Payment method
+              <select className={inputClass} value={payMethod} onChange={(e) => setPayMethod(e.target.value)}>
+                <option value="CASH">Cash</option>
+                <option value="BANK_TRANSFER">Bank transfer</option>
+                <option value="CARD">Card</option>
+                <option value="PAYPAL">PayPal</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </label>
+            <label className="flex flex-col text-sm font-bold text-ocean-deep">
+              Notes (optional)
+              <input className={inputClass} placeholder="Reference, transaction ID…"
+                value={payNotes} onChange={(e) => setPayNotes(e.target.value)} />
+            </label>
+            <div className="flex items-center gap-3">
+              <button type="button" onClick={recordPayment} disabled={savingPay}
+                className="rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-black text-white disabled:opacity-60">
+                {savingPay ? 'Saving…' : 'Record payment'}
+              </button>
+              {payMessage && <p className={`text-sm font-bold ${payError ? 'text-red-600' : 'text-emerald-600'}`}>{payMessage}</p>}
+            </div>
+          </div>
+        )}
+
+        {/* Payment history */}
+        {payments.length > 0 && (
+          <div className="mt-5">
+            <p className="mb-2 text-sm font-black text-ocean-deep">Payment history</p>
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-[#D0E8F7] text-xs text-[#4A6580]">
+                  <th className="pb-2">Date</th>
+                  <th className="pb-2 text-right">Amount</th>
+                  <th className="pb-2">Method</th>
+                  <th className="pb-2">Notes</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#D0E8F7]">
+                {payments.map((p) => (
+                  <tr key={p.id}>
+                    <td className="py-2 pr-3 whitespace-nowrap">
+                      {new Date(p.date).toLocaleDateString('en-GB')}
+                    </td>
+                    <td className="py-2 pr-3 text-right font-black text-ocean-deep">€{p.amount.toFixed(2)}</td>
+                    <td className="py-2 pr-3">
+                      <Badge tone="green">{METHOD_LABELS[p.method] ?? p.method}</Badge>
+                    </td>
+                    <td className="py-2 text-[#4A6580]">{p.notes ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {payments.length === 0 && pendingEarnings === 0 && (
+          <p className="mt-4 text-sm text-[#4A6580]">No commission pending and no payments recorded yet.</p>
+        )}
+      </Card>
+
+      {/* Danger zone */}
       <Card>
         <h2 className="text-xl font-black text-red-700">Danger zone</h2>
         <p className="mt-2 text-sm text-[#4A6580]">
           Deletes the partner account and the associated login user. Existing bookings are preserved but unlinked.
         </p>
         {!confirmDelete ? (
-          <button
-            type="button"
-            onClick={() => setConfirmDelete(true)}
-            className="mt-4 rounded-full border border-red-300 px-5 py-2.5 text-sm font-black text-red-700"
-          >
+          <button type="button" onClick={() => setConfirmDelete(true)}
+            className="mt-4 rounded-full border border-red-300 px-5 py-2.5 text-sm font-black text-red-700">
             Delete partner
           </button>
         ) : (
           <div className="mt-4 flex flex-col gap-3">
             <p className="text-sm font-bold text-red-700">Are you sure? This cannot be undone.</p>
             <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={deletePartner}
-                disabled={deleting}
-                className="rounded-full bg-red-600 px-5 py-2.5 text-sm font-black text-white disabled:opacity-60"
-              >
+              <button type="button" onClick={deletePartner} disabled={deleting}
+                className="rounded-full bg-red-600 px-5 py-2.5 text-sm font-black text-white disabled:opacity-60">
                 {deleting ? 'Deleting…' : 'Yes, delete'}
               </button>
-              <button
-                type="button"
-                onClick={() => setConfirmDelete(false)}
-                className="rounded-full border border-[#D0E8F7] px-5 py-2.5 text-sm font-black text-[#4A6580]"
-              >
+              <button type="button" onClick={() => setConfirmDelete(false)}
+                className="rounded-full border border-[#D0E8F7] px-5 py-2.5 text-sm font-black text-[#4A6580]">
                 Cancel
               </button>
             </div>

@@ -66,6 +66,15 @@ export default function PartnerEditor({ partner }: { partner: PartnerData }) {
   const [payments, setPayments] = useState<Payment[]>(partner.payments)
   const [pendingEarnings, setPendingEarnings] = useState(partner.pendingEarnings)
 
+  // --- payment edit / delete ---
+  const [editingPaymentId, setEditingPaymentId] = useState<string | null>(null)
+  const [editAmount, setEditAmount] = useState('')
+  const [editDate, setEditDate] = useState('')
+  const [editMethod, setEditMethod] = useState('')
+  const [editNotes, setEditNotes] = useState('')
+  const [savingEdit, setSavingEdit] = useState(false)
+  const [deletingPaymentId, setDeletingPaymentId] = useState<string | null>(null)
+
   // --- delete ---
   const [deleting, setDeleting] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -126,6 +135,42 @@ export default function PartnerEditor({ partner }: { partner: PartnerData }) {
     setPayAmount(newPending.toFixed(2))
     setPayNotes('')
     router.refresh()
+  }
+
+  function startEditPayment(p: Payment) {
+    setEditingPaymentId(p.id)
+    setEditAmount(p.amount.toFixed(2))
+    setEditDate(new Date(p.date).toISOString().slice(0, 10))
+    setEditMethod(p.method)
+    setEditNotes(p.notes ?? '')
+  }
+
+  async function saveEditPayment(paymentId: string) {
+    setSavingEdit(true)
+    const res = await fetch(`/api/partners/${partner.id}/payments/${paymentId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: editAmount, date: editDate, method: editMethod, notes: editNotes }),
+    })
+    setSavingEdit(false)
+    if (!res.ok) return
+    const updated = await res.json()
+    setPayments((prev) => prev.map((p) => p.id === paymentId ? { ...updated, date: updated.date } : p))
+    setEditingPaymentId(null)
+    router.refresh()
+  }
+
+  async function deletePayment(paymentId: string) {
+    if (!confirm('Delete this payment? This cannot be undone.')) return
+    setDeletingPaymentId(paymentId)
+    const res = await fetch(`/api/partners/${partner.id}/payments/${paymentId}`, { method: 'DELETE' })
+    setDeletingPaymentId(null)
+    if (res.ok) {
+      const removed = payments.find((p) => p.id === paymentId)
+      setPayments((prev) => prev.filter((p) => p.id !== paymentId))
+      if (removed) setPendingEarnings((prev) => prev + removed.amount)
+      router.refresh()
+    }
   }
 
   async function deletePartner() {
@@ -263,20 +308,72 @@ export default function PartnerEditor({ partner }: { partner: PartnerData }) {
                   <th className="pb-2 text-right">Amount</th>
                   <th className="pb-2">Method</th>
                   <th className="pb-2">Notes</th>
+                  <th className="pb-2" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#D0E8F7]">
                 {payments.map((p) => (
-                  <tr key={p.id}>
-                    <td className="py-2 pr-3 whitespace-nowrap">
-                      {new Date(p.date).toLocaleDateString('en-GB')}
-                    </td>
-                    <td className="py-2 pr-3 text-right font-black text-ocean-deep">€{p.amount.toFixed(2)}</td>
-                    <td className="py-2 pr-3">
-                      <Badge tone="green">{METHOD_LABELS[p.method] ?? p.method}</Badge>
-                    </td>
-                    <td className="py-2 text-[#4A6580]">{p.notes ?? '—'}</td>
-                  </tr>
+                  editingPaymentId === p.id ? (
+                    <tr key={p.id} className="bg-ocean-light/30">
+                      <td className="py-2 pr-2">
+                        <input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)}
+                          className="rounded border border-[#D0E8F7] px-2 py-1 text-sm outline-none focus:ring-1 focus:ring-ocean-mid" />
+                      </td>
+                      <td className="py-2 pr-2">
+                        <input type="number" step="0.01" value={editAmount} onChange={(e) => setEditAmount(e.target.value)}
+                          className="w-24 rounded border border-[#D0E8F7] px-2 py-1 text-sm outline-none focus:ring-1 focus:ring-ocean-mid" />
+                      </td>
+                      <td className="py-2 pr-2">
+                        <select value={editMethod} onChange={(e) => setEditMethod(e.target.value)}
+                          className="rounded border border-[#D0E8F7] px-2 py-1 text-sm outline-none focus:ring-1 focus:ring-ocean-mid">
+                          <option value="CASH">Cash</option>
+                          <option value="BANK_TRANSFER">Bank transfer</option>
+                          <option value="CARD">Card</option>
+                          <option value="PAYPAL">PayPal</option>
+                          <option value="OTHER">Other</option>
+                        </select>
+                      </td>
+                      <td className="py-2 pr-2">
+                        <input value={editNotes} onChange={(e) => setEditNotes(e.target.value)}
+                          placeholder="Notes"
+                          className="w-full rounded border border-[#D0E8F7] px-2 py-1 text-sm outline-none focus:ring-1 focus:ring-ocean-mid" />
+                      </td>
+                      <td className="py-2">
+                        <div className="flex gap-1">
+                          <button type="button" onClick={() => saveEditPayment(p.id)} disabled={savingEdit}
+                            className="rounded-full bg-ocean-deep px-3 py-1 text-xs font-black text-white disabled:opacity-60">
+                            {savingEdit ? '…' : 'Save'}
+                          </button>
+                          <button type="button" onClick={() => setEditingPaymentId(null)}
+                            className="rounded-full border border-[#D0E8F7] px-3 py-1 text-xs font-bold text-[#4A6580]">
+                            Cancel
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    <tr key={p.id}>
+                      <td className="py-2 pr-3 whitespace-nowrap">{new Date(p.date).toLocaleDateString('en-GB')}</td>
+                      <td className="py-2 pr-3 text-right font-black text-ocean-deep">€{p.amount.toFixed(2)}</td>
+                      <td className="py-2 pr-3">
+                        <Badge tone="green">{METHOD_LABELS[p.method] ?? p.method}</Badge>
+                      </td>
+                      <td className="py-2 pr-3 text-[#4A6580]">{p.notes ?? '—'}</td>
+                      <td className="py-2">
+                        <div className="flex gap-1">
+                          <button type="button" onClick={() => startEditPayment(p)}
+                            className="rounded-full border border-[#D0E8F7] px-3 py-1 text-xs font-bold text-[#4A6580] hover:bg-ocean-light">
+                            Edit
+                          </button>
+                          <button type="button" onClick={() => deletePayment(p.id)}
+                            disabled={deletingPaymentId === p.id}
+                            className="rounded-full border border-red-200 px-3 py-1 text-xs font-bold text-red-600 hover:bg-red-50 disabled:opacity-60">
+                            {deletingPaymentId === p.id ? '…' : 'Delete'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
                 ))}
               </tbody>
             </table>

@@ -9,12 +9,13 @@ import {
   CalendarDays,
   DatabaseBackup,
   LogOut,
+  Menu,
   Package,
   ShipWheel,
   Users,
   WalletCards,
+  X,
 } from 'lucide-react'
-
 
 type AdminLang = 'en' | 'it' | 'sq' | 'ar' | 'ru' | 'zh'
 
@@ -136,6 +137,43 @@ function partnerLinks(t: typeof shellCopy.en) {
   ]
 }
 
+function SidebarContent({
+  links,
+  mode,
+  pathname,
+  onLinkClick,
+}: {
+  links: ReturnType<typeof adminLinks>
+  mode: string
+  pathname: string
+  onLinkClick?: () => void
+}) {
+  return (
+    <nav className="space-y-1 p-4">
+      {links.map((link) => {
+        const Icon = link.icon
+        const active = pathname === link.href || (link.href !== `/${mode}` && pathname.startsWith(link.href))
+        return (
+          <Link
+            key={link.href}
+            href={link.href}
+            onClick={onLinkClick}
+            className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-bold transition ${
+              active ? 'bg-ocean-deep text-white shadow-lg shadow-ocean-deep/15' : 'text-[#4A6580] hover:bg-ocean-light'
+            }`}
+          >
+            <Icon size={18} />
+            {link.label}
+            {link.href.endsWith('prenotazioni') && mode === 'admin' && (
+              <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs text-white">!</span>
+            )}
+          </Link>
+        )
+      })}
+    </nav>
+  )
+}
+
 export default function AdminShell({
   children,
   mode = 'admin',
@@ -146,6 +184,7 @@ export default function AdminShell({
   const pathname = usePathname()
   const { data: session } = useSession()
   const [lang, setLang] = useState<AdminLang>('en')
+  const [mobileOpen, setMobileOpen] = useState(false)
   const t = shellCopy[lang]
   const role = session?.user?.role
   const links = mode === 'partner' ? partnerLinks(t) : adminLinks(t, role)
@@ -155,52 +194,116 @@ export default function AdminShell({
     if (saved && saved in shellCopy) setLang(saved)
   }, [])
 
+  // Close drawer on navigation
+  useEffect(() => {
+    setMobileOpen(false)
+  }, [pathname])
+
   function updateLang(value: AdminLang) {
     setLang(value)
     window.localStorage.setItem('valona-admin-lang', value)
   }
 
+  const sidebarHeader = (
+    <div className="flex h-16 items-center gap-2 border-b border-[#D0E8F7] px-6 font-black text-ocean-deep">
+      <img
+        src="/images/nuovafoto-fronte.ai_4.png"
+        alt="VLORA RENT A BOAT"
+        className="h-9 w-9 rounded-full object-cover ring-1 ring-[#D0E8F7]"
+      />
+      <span className="text-sm leading-tight">VLORA RENT A BOAT</span>
+    </div>
+  )
+
   return (
     <div className="min-h-screen bg-[#F4FAFD] text-[#0A1628]">
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-[#D0E8F7] bg-white lg:block">
-        <div className="flex h-16 items-center gap-2 border-b border-[#D0E8F7] px-6 font-black text-ocean-deep">
-          <img
-            src="/images/nuovafoto-fronte.ai_4.png"
-            alt="VLORA RENT A BOAT"
-            className="h-9 w-9 rounded-full object-cover ring-1 ring-[#D0E8F7]"
-          />
-          <span className="text-sm leading-tight">VLORA RENT A BOAT</span>
-        </div>
-        <nav className="space-y-1 p-4">
-          {links.map((link) => {
-            const Icon = link.icon
-            const active = pathname === link.href || (link.href !== `/${mode}` && pathname.startsWith(link.href))
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-bold transition ${
-                  active ? 'bg-ocean-deep text-white shadow-lg shadow-ocean-deep/15' : 'text-[#4A6580] hover:bg-ocean-light'
-                }`}
-              >
-                <Icon size={18} />
-                {link.label}
-                {link.href.endsWith('prenotazioni') && mode === 'admin' && (
-                  <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs text-white">!</span>
-                )}
-              </Link>
-            )
-          })}
-        </nav>
+
+      {/* Mobile backdrop */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/40 lg:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Desktop sidebar — always visible on lg+ */}
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-[#D0E8F7] bg-white lg:flex lg:flex-col">
+        {sidebarHeader}
+        <SidebarContent links={links} mode={mode} pathname={pathname} />
       </aside>
 
-      <div className="lg:pl-72">
-        <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between border-b border-[#D0E8F7] bg-white/90 px-5 backdrop-blur">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-[#8AACCC]">{mode === 'partner' ? t.partnerArea : t.adminArea}</p>
-            <p className="font-black text-ocean-deep">{session?.user?.name ?? 'VLORA RENT A BOAT'}</p>
+      {/* Mobile drawer — slides in from left */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-[#D0E8F7] bg-white transition-transform duration-200 ease-in-out lg:hidden ${
+          mobileOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="flex h-16 items-center justify-between border-b border-[#D0E8F7] px-6">
+          <div className="flex items-center gap-2 font-black text-ocean-deep">
+            <img
+              src="/images/nuovafoto-fronte.ai_4.png"
+              alt="VLORA RENT A BOAT"
+              className="h-9 w-9 rounded-full object-cover ring-1 ring-[#D0E8F7]"
+            />
+            <span className="text-sm leading-tight">VLORA RENT A BOAT</span>
           </div>
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="rounded-lg p-1.5 text-[#4A6580] hover:bg-ocean-light"
+            aria-label="Close menu"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          <SidebarContent
+            links={links}
+            mode={mode}
+            pathname={pathname}
+            onLinkClick={() => setMobileOpen(false)}
+          />
+        </div>
+        {/* Language selector at bottom of mobile drawer */}
+        <div className="border-t border-[#D0E8F7] p-4">
+          <label className="flex items-center justify-between text-xs font-bold text-[#4A6580]">
+            {t.language}
+            <select
+              value={lang}
+              onChange={(e) => updateLang(e.target.value as AdminLang)}
+              className="rounded-full border border-[#D0E8F7] bg-white px-3 py-1.5 text-ocean-deep outline-none"
+            >
+              <option value="en">EN</option>
+              <option value="it">IT</option>
+              <option value="sq">SQ</option>
+              <option value="ar">AR</option>
+              <option value="ru">RU</option>
+              <option value="zh">ZH</option>
+            </select>
+          </label>
+        </div>
+      </aside>
+
+      {/* Main content */}
+      <div className="lg:pl-72">
+        <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between border-b border-[#D0E8F7] bg-white/90 px-4 backdrop-blur md:px-5">
           <div className="flex items-center gap-3">
+            {/* Hamburger — mobile only */}
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="rounded-lg p-2 text-[#4A6580] hover:bg-ocean-light lg:hidden"
+              aria-label="Open menu"
+            >
+              <Menu size={20} />
+            </button>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#8AACCC]">
+                {mode === 'partner' ? t.partnerArea : t.adminArea}
+              </p>
+              <p className="font-black text-ocean-deep">{session?.user?.name ?? 'VLORA RENT A BOAT'}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 md:gap-3">
             <label className="hidden items-center gap-2 text-xs font-bold text-[#4A6580] sm:flex">
               {t.language}
               <select
@@ -216,17 +319,20 @@ export default function AdminShell({
                 <option value="zh">ZH</option>
               </select>
             </label>
-            <span className="rounded-full bg-ocean-light px-3 py-1 text-xs font-bold text-ocean-deep">{session?.user?.role}</span>
+            <span className="hidden rounded-full bg-ocean-light px-3 py-1 text-xs font-bold text-ocean-deep sm:inline">
+              {session?.user?.role}
+            </span>
             <button
               onClick={() => signOut({ callbackUrl: '/login' })}
-              className="inline-flex items-center gap-2 rounded-full bg-ocean-deep px-4 py-2 text-sm font-bold text-white transition hover:bg-ocean-mid"
+              className="inline-flex items-center gap-2 rounded-full bg-ocean-deep px-3 py-2 text-sm font-bold text-white transition hover:bg-ocean-mid md:px-4"
             >
               <LogOut size={16} />
-              {t.logout}
+              <span className="hidden sm:inline">{t.logout}</span>
             </button>
           </div>
         </header>
-        <div className="p-5 md:p-8">{children}</div>
+
+        <div className="p-4 md:p-8">{children}</div>
       </div>
     </div>
   )

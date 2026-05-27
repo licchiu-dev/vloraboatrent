@@ -4,6 +4,7 @@ import BookingCoreEditor from '@/components/admin/BookingCoreEditor'
 import BookingEconomicsEditor from '@/components/admin/BookingEconomicsEditor'
 import BookingItemsEditor from '@/components/admin/BookingItemsEditor'
 import BookingStatusEditor from '@/components/admin/BookingStatusEditor'
+import BookingWhatsAppMessage from '@/components/admin/BookingWhatsAppMessage'
 import DeleteBookingButton from '@/components/admin/DeleteBookingButton'
 import { Card, PageHeader } from '@/components/admin/Ui'
 import { prisma } from '@/lib/prisma'
@@ -59,10 +60,10 @@ export default async function BookingDetail({ params }: { params: Promise<{ id: 
               bookingId={booking.id}
               initialAssetIds={booking.fleetAssignments.map((a) => a.fleetAssetId)}
             />
-            <button className="mt-5 w-full rounded-full bg-ocean-deep px-4 py-3 font-black text-white">
-              Send confirmation email
-            </button>
-            <p className="mt-2 text-xs text-[#8AACCC]">// TODO: EMAIL</p>
+            <BookingWhatsAppMessage
+              date={booking.date}
+              totalPublic={booking.totalPublic}
+            />
             <DeleteBookingButton bookingId={booking.id} />
           </Card>
         </div>

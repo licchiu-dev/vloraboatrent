@@ -63,7 +63,10 @@ function logNotificationFailures(results: PromiseSettledResult<unknown>[]) {
 }
 
 async function sendResendEmail(to: string, subject: string, text: string) {
-  if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) return
+  if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) {
+    console.warn('[notifications] Resend skipped: missing RESEND_API_KEY or RESEND_FROM_EMAIL')
+    return
+  }
 
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -78,10 +81,13 @@ async function sendResendEmail(to: string, subject: string, text: string) {
       text,
     }),
   })
+  const responseBody = await response.text()
 
   if (!response.ok) {
-    throw new Error(`Resend email failed: ${response.status}`)
+    throw new Error(`Resend email failed: ${response.status} ${responseBody}`)
   }
+
+  console.info(`[notifications] Resend accepted email to ${to}: ${responseBody}`)
 }
 
 function normalizePhoneForWhatsapp(phone: string) {

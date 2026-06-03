@@ -1,6 +1,7 @@
 import { BookingStatus, PaymentMethod, TimeSlot } from '@prisma/client'
 import { createBooking } from '@/lib/bookings'
 import { apiRequireRole } from '@/lib/guards'
+import { notifyAdminNewBooking } from '@/lib/notifications'
 import { prisma } from '@/lib/prisma'
 
 export async function GET() {
@@ -40,6 +41,25 @@ export async function POST(request: Request) {
     internalNotes: isPartner ? null : body.internalNotes,
     createdBy: isPartner ? 'PARTNER' : 'ADMIN',
   })
+
+  if (isPartner) {
+    const partner = guard.session.user.partnerId
+      ? await prisma.partner.findUnique({ where: { id: guard.session.user.partnerId } })
+      : null
+
+    await notifyAdminNewBooking({
+      bookingId: booking.id,
+      source: 'PARTNER',
+      customerName: body.customer.name,
+      customerEmail: body.customer.email,
+      customerPhone: body.customer.phone,
+      date: body.date,
+      timeSlot: booking.timeSlot,
+      status: booking.status,
+      partnerName: partner?.companyName,
+      notes: body.notes,
+    })
+  }
 
   return Response.json(booking)
 }

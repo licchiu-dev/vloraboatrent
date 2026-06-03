@@ -9,10 +9,39 @@ type PublicBookingNotification = {
   note?: string
 }
 
-const adminEmail = process.env.ADMIN_BOOKING_EMAIL ?? 'leosergio93@gmail.com'
+type AdminBookingNotification = {
+  bookingId: string
+  source: 'WEBSITE' | 'PARTNER' | 'ADMIN'
+  customerName: string
+  customerEmail: string
+  customerPhone: string
+  date: string
+  timeSlot: string
+  status?: string
+  partnerName?: string | null
+  notes?: string | null
+}
+
+const adminEmail = process.env.ADMIN_BOOKING_EMAIL ?? process.env.SUPERADMIN_EMAIL ?? 'leosergio93@gmail.com'
+const adminWhatsapp = process.env.ADMIN_BOOKING_WHATSAPP
 const brandName = 'VLORA RENT A BOAT'
 
-function bookingSummary(input: PublicBookingNotification) {
+function bookingSummary(input: PublicBookingNotification | AdminBookingNotification) {
+  if ('customerName' in input) {
+    return [
+      `Booking ID: ${input.bookingId}`,
+      `Origine: ${input.source}`,
+      `Cliente: ${input.customerName}`,
+      `Email: ${input.customerEmail}`,
+      `Telefono: ${input.customerPhone}`,
+      `Data: ${input.date}`,
+      `Fascia: ${input.timeSlot}`,
+      `Stato: ${input.status ?? '-'}`,
+      `Partner: ${input.partnerName ?? '-'}`,
+      `Note: ${input.notes || '-'}`,
+    ].join('\n')
+  }
+
   return [
     `Booking ID: ${input.bookingId}`,
     `Servizio: ${input.tipo}`,
@@ -23,6 +52,14 @@ function bookingSummary(input: PublicBookingNotification) {
     `Fascia: ${input.fascia}`,
     `Note: ${input.note || '-'}`,
   ].join('\n')
+}
+
+function logNotificationFailures(results: PromiseSettledResult<unknown>[]) {
+  results.forEach((result) => {
+    if (result.status === 'rejected') {
+      console.error('[notifications] delivery failed', result.reason)
+    }
+  })
 }
 
 async function sendResendEmail(to: string, subject: string, text: string) {
@@ -80,21 +117,23 @@ async function sendWhatsappText(toPhone: string, message: string) {
 
 export async function notifyPublicBooking(input: PublicBookingNotification) {
   const summary = bookingSummary(input)
-  const customerMessage = [
-    `Ciao ${input.nome},`,
-    `abbiamo ricevuto la tua richiesta di prenotazione con ${brandName}.`,
-    'Ti contatteremo entro 24 ore per confermare la disponibilita.',
-    '',
-    `Data richiesta: ${input.data}`,
-    `Fascia: ${input.fascia}`,
-  ].join('\n')
 
-  await Promise.allSettled([
+  const results = await Promise.allSettled([
     sendResendEmail(adminEmail, `Nuova richiesta prenotazione - ${brandName}`, summary),
-    sendResendEmail(input.email, `Richiesta ricevuta - ${brandName}`, customerMessage),
-    sendWhatsappText(
-      input.telefono,
-      `Ciao ${input.nome}, abbiamo ricevuto la tua richiesta con ${brandName}. Ti contatteremo entro 24 ore per confermare la disponibilita.`
-    ),
+    adminWhatsapp
+      ? sendWhatsappText(adminWhatsapp, `Nuova richiesta ${brandName}\n\n${summary}`)
+      : Promise.resolve(),
   ])
+  logNotificationFailures(results)
+}
+
+export async function notifyAdminNewBooking(input: AdminBookingNotification) {
+  const summary = bookingSummary(input)
+  const results = await Promise.allSettled([
+    sendResendEmail(adminEmail, `Nuova richiesta ${input.source.toLowerCase()} - ${brandName}`, summary),
+    adminWhatsapp
+      ? sendWhatsappText(adminWhatsapp, `Nuova richiesta ${brandName}\n\n${summary}`)
+      : Promise.resolve(),
+  ])
+  logNotificationFailures(results)
 }

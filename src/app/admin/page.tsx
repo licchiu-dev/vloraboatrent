@@ -26,9 +26,17 @@ export default async function AdminDashboard() {
   const seasonStart = new Date(year, 5, 1)
   const seasonEnd = new Date(year, 11, 1)
 
-  const [monthBookings, urgentBookings, partnerCount, seasonItems] = await Promise.all([
-    prisma.booking.findMany({
-      where: { date: { gte: monthStart, lt: monthEnd }, status: { in: REVENUE_STATUSES } },
+  const [monthItems, urgentBookings, partnerCount, seasonItems] = await Promise.all([
+    prisma.bookingItem.findMany({
+      where: {
+        booking: {
+          date: { gte: monthStart, lt: monthEnd },
+          status: { in: REVENUE_STATUSES },
+        },
+      },
+      include: {
+        product: { select: { basePrice: true } },
+      },
     }),
     prisma.booking.findMany({
       where: { status: 'PENDING' },
@@ -42,7 +50,6 @@ export default async function AdminDashboard() {
           date: { gte: seasonStart, lt: seasonEnd },
           status: { in: REVENUE_STATUSES },
         },
-        product: { category: { in: ['NOLEGGIO', 'ESPERIENZA'] } },
       },
       include: {
         product: { select: { name: true, basePrice: true } },
@@ -51,7 +58,7 @@ export default async function AdminDashboard() {
     }),
   ])
 
-  const monthRevenue = monthBookings.reduce((sum, b) => sum + (b.totalPublic ?? 0), 0)
+  const monthRevenue = monthItems.reduce((sum, item) => sum + item.product.basePrice * item.quantity, 0)
   const rowNames = [...new Set(seasonItems.map((item) => baseName(item.product.name)))].sort()
 
   function cellRevenue(row: string, monthIndex: number) {
@@ -133,7 +140,7 @@ export default async function AdminDashboard() {
       <Card className="mt-6 overflow-x-auto">
         <h2 className="text-xl font-black text-ocean-deep">Season revenue {year}</h2>
         <p className="mt-1 mb-5 text-sm text-[#4A6580]">
-          Jun – Nov · Confirmed + completed bookings · Excludes pending, cancelled and extras.
+          Jun – Nov · Confirmed + completed bookings · Includes services and extras.
         </p>
         {rowNames.length === 0 ? (
           <p className="py-10 text-center text-[#4A6580]">No bookings for the Jun–Nov season yet.</p>
@@ -141,7 +148,7 @@ export default async function AdminDashboard() {
           <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr className="border-b border-[#D0E8F7]">
-                <th className="pb-3 text-left font-bold text-[#4A6580]">Experience</th>
+                <th className="pb-3 text-left font-bold text-[#4A6580]">Service / extra</th>
                 {SEASON_MONTHS.map((m) => (
                   <th key={m.index} className="pb-3 text-right font-bold text-[#4A6580]">
                     {m.label}

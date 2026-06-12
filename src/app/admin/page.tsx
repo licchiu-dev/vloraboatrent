@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import type { BookingStatus } from '@prisma/client'
 import { Badge, Card, PageHeader } from '@/components/admin/Ui'
 import { prisma } from '@/lib/prisma'
 
@@ -11,19 +12,23 @@ const SEASON_MONTHS = [
   { index: 10, label: 'Nov' },
 ]
 
+const REVENUE_STATUSES: BookingStatus[] = ['CONFIRMED', 'COMPLETED']
+
 function baseName(name: string) {
   return name.replace(/ - (Mezza giornata|Giornata intera)$/i, '').trim()
 }
 
 export default async function AdminDashboard() {
   const year = new Date().getFullYear()
-  const monthStart = new Date(year, new Date().getMonth(), 1)
+  const currentMonth = new Date().getMonth()
+  const monthStart = new Date(year, currentMonth, 1)
+  const monthEnd = new Date(year, currentMonth + 1, 1)
   const seasonStart = new Date(year, 5, 1)
   const seasonEnd = new Date(year, 11, 1)
 
   const [monthBookings, urgentBookings, partnerCount, seasonItems] = await Promise.all([
     prisma.booking.findMany({
-      where: { date: { gte: monthStart }, status: { in: ['CONFIRMED', 'COMPLETED'] } },
+      where: { date: { gte: monthStart, lt: monthEnd }, status: { in: REVENUE_STATUSES } },
     }),
     prisma.booking.findMany({
       where: { status: 'PENDING' },
@@ -35,12 +40,12 @@ export default async function AdminDashboard() {
       where: {
         booking: {
           date: { gte: seasonStart, lt: seasonEnd },
-          status: { in: ['CONFIRMED', 'COMPLETED', 'PENDING'] },
+          status: { in: REVENUE_STATUSES },
         },
         product: { category: { in: ['NOLEGGIO', 'ESPERIENZA'] } },
       },
       include: {
-        product: { select: { name: true } },
+        product: { select: { name: true, basePrice: true } },
         booking: { select: { date: true } },
       },
     }),
@@ -52,7 +57,7 @@ export default async function AdminDashboard() {
   function cellRevenue(row: string, monthIndex: number) {
     return seasonItems
       .filter((item) => baseName(item.product.name) === row && item.booking.date.getMonth() === monthIndex)
-      .reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
+      .reduce((sum, item) => sum + item.product.basePrice * item.quantity, 0)
   }
 
   function rowTotal(row: string) {
@@ -128,7 +133,7 @@ export default async function AdminDashboard() {
       <Card className="mt-6 overflow-x-auto">
         <h2 className="text-xl font-black text-ocean-deep">Season revenue {year}</h2>
         <p className="mt-1 mb-5 text-sm text-[#4A6580]">
-          Jun – Nov · Confirmed + pending bookings · Excludes cancelled and extras.
+          Jun – Nov · Confirmed + completed bookings · Excludes pending, cancelled and extras.
         </p>
         {rowNames.length === 0 ? (
           <p className="py-10 text-center text-[#4A6580]">No bookings for the Jun–Nov season yet.</p>

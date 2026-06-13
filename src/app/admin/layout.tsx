@@ -4,6 +4,6 @@ import { requireRole } from '@/lib/guards'
 export const dynamic = 'force-dynamic'
 
 export default async function Layout({ children }: { children: React.ReactNode }) {
-  await requireRole(['SUPERADMIN', 'ADMIN'])
-  return <AdminShell>{children}</AdminShell>
+  const session = await requireRole(['SUPERADMIN', 'ADMIN'])
+  return <AdminShell user={{ name: session.user.name, role: session.user.role }}>{children}</AdminShell>
 }

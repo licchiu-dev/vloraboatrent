@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { signOut, useSession } from 'next-auth/react'
+import { signOut } from 'next-auth/react'
 import {
   BarChart3,
   CalendarDays,
@@ -18,6 +18,11 @@ import {
 } from 'lucide-react'
 
 type AdminLang = 'en' | 'it' | 'sq' | 'ar' | 'ru' | 'zh'
+
+type ShellUser = {
+  name?: string | null
+  role?: string | null
+}
 
 const shellCopy = {
   en: {
@@ -141,31 +146,39 @@ function SidebarContent({
   links,
   mode,
   pathname,
+  navigatingHref,
   onLinkClick,
 }: {
   links: ReturnType<typeof adminLinks>
   mode: string
   pathname: string
-  onLinkClick?: () => void
+  navigatingHref?: string
+  onLinkClick?: (href: string) => void
 }) {
   return (
     <nav className="space-y-1 p-4">
       {links.map((link) => {
         const Icon = link.icon
         const active = pathname === link.href || (link.href !== `/${mode}` && pathname.startsWith(link.href))
+        const navigating = navigatingHref === link.href && !active
         return (
           <Link
             key={link.href}
             href={link.href}
-            onClick={onLinkClick}
+            prefetch
+            aria-current={active ? 'page' : undefined}
+            onClick={() => onLinkClick?.(link.href)}
             className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-bold transition ${
               active ? 'bg-ocean-deep text-white shadow-lg shadow-ocean-deep/15' : 'text-[#4A6580] hover:bg-ocean-light'
             }`}
           >
             <Icon size={18} />
             {link.label}
+            {navigating && (
+              <span className="ml-auto h-2 w-2 animate-pulse rounded-full bg-ocean-mid" aria-hidden />
+            )}
             {link.href.endsWith('prenotazioni') && mode === 'admin' && (
-              <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs text-white">!</span>
+              <span className={`${navigating ? '' : 'ml-auto'} rounded-full bg-red-500 px-2 py-0.5 text-xs text-white`}>!</span>
             )}
           </Link>
         )
@@ -177,16 +190,18 @@ function SidebarContent({
 export default function AdminShell({
   children,
   mode = 'admin',
+  user,
 }: {
   children: React.ReactNode
   mode?: 'admin' | 'partner'
+  user?: ShellUser
 }) {
   const pathname = usePathname()
-  const { data: session } = useSession()
   const [lang, setLang] = useState<AdminLang>('en')
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [navigatingHref, setNavigatingHref] = useState('')
   const t = shellCopy[lang]
-  const role = session?.user?.role
+  const role = user?.role ?? undefined
   const links = mode === 'partner' ? partnerLinks(t) : adminLinks(t, role)
 
   useEffect(() => {
@@ -197,6 +212,7 @@ export default function AdminShell({
   // Close drawer on navigation
   useEffect(() => {
     setMobileOpen(false)
+    setNavigatingHref('')
   }, [pathname])
 
   function updateLang(value: AdminLang) {
@@ -229,7 +245,15 @@ export default function AdminShell({
       {/* Desktop sidebar — always visible on lg+ */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-[#D0E8F7] bg-white lg:flex lg:flex-col">
         {sidebarHeader}
-        <SidebarContent links={links} mode={mode} pathname={pathname} />
+        <SidebarContent
+          links={links}
+          mode={mode}
+          pathname={pathname}
+          navigatingHref={navigatingHref}
+          onLinkClick={(href) => {
+            if (href !== pathname) setNavigatingHref(href)
+          }}
+        />
       </aside>
 
       {/* Mobile drawer — slides in from left */}
@@ -260,7 +284,11 @@ export default function AdminShell({
             links={links}
             mode={mode}
             pathname={pathname}
-            onLinkClick={() => setMobileOpen(false)}
+            navigatingHref={navigatingHref}
+            onLinkClick={(href) => {
+              setMobileOpen(false)
+              if (href !== pathname) setNavigatingHref(href)
+            }}
           />
         </div>
         {/* Language selector at bottom of mobile drawer */}
@@ -299,7 +327,7 @@ export default function AdminShell({
               <p className="text-xs font-bold uppercase tracking-widest text-[#8AACCC]">
                 {mode === 'partner' ? t.partnerArea : t.adminArea}
               </p>
-              <p className="font-black text-ocean-deep">{session?.user?.name ?? 'VLORA RENT A BOAT'}</p>
+              <p className="font-black text-ocean-deep">{user?.name ?? 'VLORA RENT A BOAT'}</p>
             </div>
           </div>
 
@@ -320,7 +348,7 @@ export default function AdminShell({
               </select>
             </label>
             <span className="hidden rounded-full bg-ocean-light px-3 py-1 text-xs font-bold text-ocean-deep sm:inline">
-              {session?.user?.role}
+              {user?.role}
             </span>
             <button
               onClick={() => signOut({ callbackUrl: '/login' })}

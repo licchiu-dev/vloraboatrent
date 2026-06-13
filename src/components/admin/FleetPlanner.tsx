@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import type { FleetCategory, Product } from '@prisma/client'
 
 type PlannerBooking = {
@@ -169,13 +170,16 @@ export default function FleetPlanner({ canManageFleet }: { canManageFleet: boole
                   const assignment = asset.assignments.find((entry) => isoDate(new Date(entry.booking.date)) === isoDate(day))
                   if (!assignment) return <td key={isoDate(day)} className="border-l border-[#E8F3FA] p-2 align-top" />
                   const isPending = assignment.booking.status === 'PENDING'
+                  const bookingHref = canManageFleet
+                    ? `/admin/prenotazioni/${assignment.booking.id}`
+                    : `/partner/prenotazioni/${assignment.booking.id}`
                   return (
                     <td key={isoDate(day)} className="border-l border-[#E8F3FA] p-2 align-top">
-                      <div className={`rounded-lg border-2 p-2 text-xs ${isPending ? 'border-ocean-deep bg-white text-ocean-deep' : 'border-ocean-deep bg-ocean-deep text-white'}`}>
+                      <Link href={bookingHref} className={`block rounded-lg border-2 p-2 text-xs transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-sand ${isPending ? 'border-ocean-deep bg-white text-ocean-deep' : 'border-ocean-deep bg-ocean-deep text-white'}`}>
                         <p className="font-black">{assignment.booking.customer.name}</p>
                         <p className={isPending ? 'text-ocean-mid' : ''}>{assignment.booking.items.map((item) => item.product.name).join(', ')}</p>
                         <p className={`mt-1 ${isPending ? 'text-[#4A6580]' : 'text-white/75'}`}>Payment: {assignment.booking.paymentMethod}</p>
-                      </div>
+                      </Link>
                     </td>
                   )
                 })}

@@ -19,6 +19,7 @@ export default async function BookingsPage() {
   })
 
   const bookings = await prisma.booking.findMany({
+    where: { status: { in: ['PENDING', 'CONFIRMED'] } },
     include: { customer: true, partner: true, items: { include: { product: true } } },
     orderBy: { date: 'desc' },
   })

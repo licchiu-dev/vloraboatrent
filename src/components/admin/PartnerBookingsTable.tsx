@@ -50,7 +50,7 @@ const inputClass =
 export default function PartnerBookingsTable({ rows }: { rows: PartnerBookingRow[] }) {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
-  const [status, setStatus] = useState('')
+  const [status, setStatus] = useState('ACTIVE')
   const [service, setService] = useState('')
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({ key: 'date', dir: 'desc' })
 
@@ -64,7 +64,8 @@ export default function PartnerBookingsTable({ rows }: { rows: PartnerBookingRow
     let data = rows
     if (dateFrom) data = data.filter((r) => r.date >= dateFrom)
     if (dateTo) data = data.filter((r) => r.date <= dateTo)
-    if (status) data = data.filter((r) => r.status === status)
+    if (status === 'ACTIVE') data = data.filter((r) => r.status === 'PENDING' || r.status === 'CONFIRMED')
+    else if (status) data = data.filter((r) => r.status === status)
     if (service) data = data.filter((r) => r.services.toLowerCase().includes(service.toLowerCase()))
 
     return [...data].sort((a, b) => {
@@ -78,11 +79,11 @@ export default function PartnerBookingsTable({ rows }: { rows: PartnerBookingRow
   function clearFilters() {
     setDateFrom('')
     setDateTo('')
-    setStatus('')
+    setStatus('ACTIVE')
     setService('')
   }
 
-  const hasFilter = dateFrom || dateTo || status || service
+  const hasFilter = dateFrom || dateTo || status !== 'ACTIVE' || service
 
   return (
     <div className="space-y-4">
@@ -90,6 +91,7 @@ export default function PartnerBookingsTable({ rows }: { rows: PartnerBookingRow
         <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className={inputClass} title="From date" />
         <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className={inputClass} title="To date" />
         <select value={status} onChange={(e) => setStatus(e.target.value)} className={inputClass}>
+          <option value="ACTIVE">Pending + confirmed</option>
           <option value="">All statuses</option>
           <option value="PENDING">Pending</option>
           <option value="CONFIRMED">Confirmed</option>

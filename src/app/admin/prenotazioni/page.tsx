@@ -10,16 +10,7 @@ function paymentLabel(paymentMethod: string, status: string) {
 }
 
 export default async function BookingsPage() {
-  // Auto-complete: mark past CONFIRMED bookings as COMPLETED
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  await prisma.booking.updateMany({
-    where: { status: 'CONFIRMED', date: { lt: today } },
-    data: { status: 'COMPLETED' },
-  })
-
   const bookings = await prisma.booking.findMany({
-    where: { status: { in: ['PENDING', 'CONFIRMED'] } },
     include: { customer: true, partner: true, items: { include: { product: true } } },
     orderBy: { date: 'desc' },
   })

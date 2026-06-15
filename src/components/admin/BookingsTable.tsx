@@ -48,7 +48,7 @@ export default function BookingsTable({ rows }: { rows: BookingRow[] }) {
   const [customer, setCustomer] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
-  const [status, setStatus] = useState('')
+  const [status, setStatus] = useState('ACTIVE')
   const [service, setService] = useState('')
   const [partner, setPartner] = useState('')
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({ key: 'date', dir: 'desc' })
@@ -64,7 +64,8 @@ export default function BookingsTable({ rows }: { rows: BookingRow[] }) {
     if (customer) data = data.filter((r) => r.customerName.toLowerCase().includes(customer.toLowerCase()))
     if (dateFrom) data = data.filter((r) => r.date >= dateFrom)
     if (dateTo) data = data.filter((r) => r.date <= dateTo)
-    if (status) data = data.filter((r) => r.status === status)
+    if (status === 'ACTIVE') data = data.filter((r) => r.status === 'PENDING' || r.status === 'CONFIRMED')
+    else if (status) data = data.filter((r) => r.status === status)
     if (service) data = data.filter((r) => r.services.toLowerCase().includes(service.toLowerCase()))
     if (partner) data = data.filter((r) => r.partnerName.toLowerCase().includes(partner.toLowerCase()))
 
@@ -80,12 +81,12 @@ export default function BookingsTable({ rows }: { rows: BookingRow[] }) {
     setCustomer('')
     setDateFrom('')
     setDateTo('')
-    setStatus('')
+    setStatus('ACTIVE')
     setService('')
     setPartner('')
   }
 
-  const hasFilter = customer || dateFrom || dateTo || status || service || partner
+  const hasFilter = customer || dateFrom || dateTo || status !== 'ACTIVE' || service || partner
 
   return (
     <div className="space-y-4">
@@ -94,6 +95,7 @@ export default function BookingsTable({ rows }: { rows: BookingRow[] }) {
         <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className={inputClass} title="From date" />
         <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className={inputClass} title="To date" />
         <select value={status} onChange={(e) => setStatus(e.target.value)} className={inputClass}>
+          <option value="ACTIVE">Pending + confirmed</option>
           <option value="">All statuses</option>
           <option value="PENDING">Pending</option>
           <option value="CONFIRMED">Confirmed</option>

@@ -6,14 +6,6 @@ import { prisma } from '@/lib/prisma'
 export default async function PartnerBookingsPage() {
   const session = await requireRole(['PARTNER'])
 
-  // Auto-complete past confirmed bookings
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  await prisma.booking.updateMany({
-    where: { partnerId: session.user.partnerId, status: 'CONFIRMED', date: { lt: today } },
-    data: { status: 'COMPLETED' },
-  })
-
   const bookings = await prisma.booking.findMany({
     where: { partnerId: session.user.partnerId },
     include: { customer: true, items: { include: { product: true } } },

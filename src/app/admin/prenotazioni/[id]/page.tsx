@@ -11,12 +11,13 @@ import { prisma } from '@/lib/prisma'
 
 export default async function BookingDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const [booking, messages] = await Promise.all([
+  const [booking, messages, products] = await Promise.all([
     prisma.booking.findUnique({
       where: { id },
       include: { customer: true, partner: true, items: { include: { product: true } }, fleetAssignments: true },
     }),
     prisma.bookingMessage.findMany({ where: { bookingId: id }, orderBy: { sentAt: 'desc' } }),
+    prisma.product.findMany({ where: { active: true }, orderBy: [{ category: 'asc' }, { name: 'asc' }] }),
   ])
   if (!booking) notFound()
 
@@ -35,7 +36,7 @@ export default async function BookingDetail({ params }: { params: Promise<{ id: 
             createdBy={booking.createdBy}
           />
           <div className="mt-8 border-t border-[#D0E8F7] pt-6">
-            <BookingItemsEditor bookingId={booking.id} initialItems={booking.items} />
+            <BookingItemsEditor bookingId={booking.id} initialItems={booking.items} products={products} />
           </div>
         </Card>
 

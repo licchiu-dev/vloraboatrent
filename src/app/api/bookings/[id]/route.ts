@@ -1,6 +1,6 @@
 import { apiRequireRole } from '@/lib/guards'
 import { prisma } from '@/lib/prisma'
-import { roundMoney } from '@/lib/pricing'
+import { calcCommission, calcPartnerPrice, roundMoney } from '@/lib/pricing'
 
 // Recalculates totalEarnings and pendingEarnings for a partner from their bookings and payments.
 async function syncPartnerEarnings(partnerId: string) {
@@ -116,42 +116,72 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (customer) await updateBookingCustomer(id, customer)
 
   if (Array.isArray(body.items)) {
-    const existingItems = await prisma.bookingItem.findMany({
-      where: { bookingId: id },
-      include: { product: true },
-    })
-    const submittedItems = body.items as { id: string; unitPrice: number }[]
-    const nextItems = submittedItems
-      .map((item: { id: string; unitPrice: number }) => {
-        const existing = existingItems.find((candidate) => candidate.id === item.id)
-        if (!existing) return null
-        const unitPrice = Math.max(0, Number(item.unitPrice) || 0)
-        return {
-          item: existing,
-          unitPrice,
-          total: roundMoney(unitPrice * existing.quantity),
-        }
-      })
-      .filter((item): item is { item: typeof existingItems[number]; unitPrice: number; total: number } => Boolean(item))
+    // Desired state: full list of items. Items with `id` are kept/updated;
+    // items without `id` are created; existing items absent from the list
+    // are deleted. Totals are always recomputed from catalog prices so that
+    // Public price = listino (basePrice × qty), regardless of partner rates.
+    type SubmittedItem = { id?: string; productId: string; quantity: number }
+    const submitted = (body.items as SubmittedItem[]).filter((s) => s.productId)
 
-    const totalPublic = roundMoney(nextItems.reduce((sum, line) => sum + line!.total, 0))
-    const bookingWithPartner = await prisma.booking.findUnique({ where: { id }, include: { partner: true } })
-    const baseTotal = roundMoney(nextItems.reduce((sum, line) => sum + line!.item.product.basePrice * line!.item.quantity, 0))
-    const totalPartner = bookingWithPartner?.partnerId ? totalPublic : null
-    const commission = bookingWithPartner?.partnerId ? roundMoney(baseTotal - totalPublic) : null
-
-    await prisma.$transaction([
-      ...nextItems.map((line) =>
-        prisma.bookingItem.update({
-          where: { id: line!.item.id },
-          data: { unitPrice: line!.unitPrice, total: line!.total },
-        })
-      ),
-      prisma.booking.update({
-        where: { id },
-        data: { totalPublic, totalPartner, commission },
+    const [existingItems, products, bookingWithPartner] = await Promise.all([
+      prisma.bookingItem.findMany({ where: { bookingId: id } }),
+      prisma.product.findMany({
+        where: { id: { in: submitted.map((s) => s.productId) } },
+        include: { partnerPrices: true },
       }),
+      prisma.booking.findUnique({ where: { id }, include: { partner: true } }),
     ])
+
+    const partner = bookingWithPartner?.partner ?? null
+    const existingIds = new Set(existingItems.map((e) => e.id))
+    const keptIds = new Set(submitted.map((s) => s.id).filter(Boolean) as string[])
+    const toDeleteIds = [...existingIds].filter((eid) => !keptIds.has(eid))
+
+    // Build per-line pricing from current catalog + partner rates
+    const lines = submitted
+      .map((s) => {
+        const product = products.find((p) => p.id === s.productId)
+        if (!product) return null
+        const qty = Math.max(1, Number(s.quantity) || 1)
+        const publicUnit = product.basePrice
+        const partnerUnit = partner ? calcPartnerPrice(product, partner) : product.basePrice
+        return { s, product, qty, publicUnit, partnerUnit }
+      })
+      .filter((l): l is NonNullable<typeof l> => l !== null)
+
+    const totalPublic = roundMoney(lines.reduce((sum, l) => sum + l.publicUnit * l.qty, 0))
+    const totalPartner = partner ? roundMoney(lines.reduce((sum, l) => sum + l.partnerUnit * l.qty, 0)) : null
+    const commission = partner ? roundMoney(totalPublic - (totalPartner ?? 0)) : null
+
+    await prisma.$transaction(async (tx) => {
+      if (toDeleteIds.length) {
+        await tx.bookingItem.deleteMany({ where: { id: { in: toDeleteIds } } })
+      }
+      for (const line of lines) {
+        if (line.s.id && keptIds.has(line.s.id)) {
+          await tx.bookingItem.update({
+            where: { id: line.s.id },
+            data: {
+              productId: line.product.id,
+              quantity: line.qty,
+              unitPrice: line.partnerUnit,
+              total: roundMoney(line.partnerUnit * line.qty),
+            },
+          })
+        } else {
+          await tx.bookingItem.create({
+            data: {
+              bookingId: id,
+              productId: line.product.id,
+              quantity: line.qty,
+              unitPrice: line.partnerUnit,
+              total: roundMoney(line.partnerUnit * line.qty),
+            },
+          })
+        }
+      }
+      await tx.booking.update({ where: { id }, data: { totalPublic, totalPartner, commission } })
+    })
   }
 
   const booking = await prisma.booking.update({

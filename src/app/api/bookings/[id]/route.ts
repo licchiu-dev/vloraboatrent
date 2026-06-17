@@ -120,7 +120,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     // items without `id` are created; existing items absent from the list
     // are deleted. Totals are always recomputed from catalog prices so that
     // Public price = listino (basePrice × qty), regardless of partner rates.
-    type SubmittedItem = { id?: string; productId: string; quantity: number }
+    type SubmittedItem = { id?: string; productId: string; quantity: number; unitPrice?: number }
     const submitted = (body.items as SubmittedItem[]).filter((s) => s.productId)
 
     const [existingItems, products, bookingWithPartner] = await Promise.all([
@@ -137,14 +137,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const keptIds = new Set(submitted.map((s) => s.id).filter(Boolean) as string[])
     const toDeleteIds = [...existingIds].filter((eid) => !keptIds.has(eid))
 
-    // Build per-line pricing from current catalog + partner rates
+    // Build per-line pricing.
+    // publicUnit: admin-set price (falls back to catalog basePrice) — this IS what customer pays.
+    // partnerUnit: partner net price for commission calculation only.
     const lines = submitted
       .map((s) => {
         const product = products.find((p) => p.id === s.productId)
         if (!product) return null
         const qty = Math.max(1, Number(s.quantity) || 1)
-        const publicUnit = product.basePrice
-        const partnerUnit = partner ? calcPartnerPrice(product, partner) : product.basePrice
+        const publicUnit = s.unitPrice != null ? Math.max(0, Number(s.unitPrice)) : product.basePrice
+        const partnerUnit = partner ? calcPartnerPrice(product, partner) : publicUnit
         return { s, product, qty, publicUnit, partnerUnit }
       })
       .filter((l): l is NonNullable<typeof l> => l !== null)
@@ -164,8 +166,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
             data: {
               productId: line.product.id,
               quantity: line.qty,
-              unitPrice: line.partnerUnit,
-              total: roundMoney(line.partnerUnit * line.qty),
+              unitPrice: line.publicUnit,
+              total: roundMoney(line.publicUnit * line.qty),
             },
           })
         } else {
@@ -174,8 +176,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
               bookingId: id,
               productId: line.product.id,
               quantity: line.qty,
-              unitPrice: line.partnerUnit,
-              total: roundMoney(line.partnerUnit * line.qty),
+              unitPrice: line.publicUnit,
+              total: roundMoney(line.publicUnit * line.qty),
             },
           })
         }

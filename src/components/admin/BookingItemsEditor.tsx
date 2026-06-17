@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { Trash2 } from 'lucide-react'
+import { Trash2, Plus } from 'lucide-react'
 
 type BookingItem = {
   id: string
@@ -15,13 +15,16 @@ type BookingItem = {
 type CatalogProduct = { id: string; name: string; basePrice: number; category: string }
 
 type LineItem = {
-  // present for existing items, absent for newly-added
-  id?: string
+  id?: string        // present for existing items
   productId: string
   name: string
-  basePrice: number
+  basePrice: number  // catalog reference
   quantity: number
+  unitPrice: number  // editable public price, starts at basePrice
 }
+
+const inputClass =
+  'rounded-lg border border-[#D0E8F7] bg-white px-3 py-2 text-sm text-[#1a2e3b] focus:outline-none focus:ring-2 focus:ring-ocean-mid'
 
 export default function BookingItemsEditor({
   bookingId,
@@ -40,30 +43,43 @@ export default function BookingItemsEditor({
       name: item.product.name,
       basePrice: item.product.basePrice,
       quantity: item.quantity,
+      unitPrice: item.product.basePrice, // start from catalog price
     }))
   )
-  const [addProductId, setAddProductId] = useState('')
-  const [addQty, setAddQty] = useState(1)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
 
-  // Products not yet in the list
-  const available = products.filter((p) => !lines.some((l) => l.productId === p.id))
-
-  function addLine() {
-    const product = products.find((p) => p.id === addProductId)
-    if (!product) return
-    setLines((prev) => [...prev, { productId: product.id, name: product.name, basePrice: product.basePrice, quantity: Math.max(1, addQty) }])
-    setAddProductId('')
-    setAddQty(1)
-  }
-
-  function removeLine(idx: number) {
-    setLines((prev) => prev.filter((_, i) => i !== idx))
+  function changeProduct(idx: number, productId: string) {
+    const p = products.find((x) => x.id === productId)
+    if (!p) return
+    setLines((prev) =>
+      prev.map((l, i) =>
+        i === idx
+          ? { ...l, productId: p.id, name: p.name, basePrice: p.basePrice, unitPrice: p.basePrice }
+          : l
+      )
+    )
   }
 
   function setQty(idx: number, qty: number) {
     setLines((prev) => prev.map((l, i) => (i === idx ? { ...l, quantity: Math.max(1, qty) } : l)))
+  }
+
+  function setUnitPrice(idx: number, price: number) {
+    setLines((prev) => prev.map((l, i) => (i === idx ? { ...l, unitPrice: Math.max(0, price) } : l)))
+  }
+
+  function addLine() {
+    const p = products[0]
+    if (!p) return
+    setLines((prev) => [
+      ...prev,
+      { productId: p.id, name: p.name, basePrice: p.basePrice, quantity: 1, unitPrice: p.basePrice },
+    ])
+  }
+
+  function removeLine(idx: number) {
+    setLines((prev) => prev.filter((_, i) => i !== idx))
   }
 
   async function save() {
@@ -73,7 +89,12 @@ export default function BookingItemsEditor({
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        items: lines.map((l) => ({ id: l.id, productId: l.productId, quantity: l.quantity })),
+        items: lines.map((l) => ({
+          id: l.id,
+          productId: l.productId,
+          quantity: l.quantity,
+          unitPrice: l.unitPrice,
+        })),
       }),
     })
     setSaving(false)
@@ -85,11 +106,11 @@ export default function BookingItemsEditor({
     router.refresh()
   }
 
-  const totalPublic = lines.reduce((sum, l) => sum + l.basePrice * l.quantity, 0)
+  const totalPublic = lines.reduce((sum, l) => sum + l.unitPrice * l.quantity, 0)
 
   return (
     <div>
-      <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="mb-4 flex items-center justify-between gap-3">
         <h2 className="text-xl font-black text-ocean-deep">Products</h2>
         <button
           type="button"
@@ -101,21 +122,61 @@ export default function BookingItemsEditor({
         </button>
       </div>
 
+      {/* Header row */}
+      <div className="mb-1 hidden grid-cols-[1fr_5rem_7rem_6rem_2.5rem] gap-2 text-xs font-bold uppercase tracking-widest text-[#8AACCC] md:grid">
+        <span>Product</span>
+        <span className="text-center">Qty</span>
+        <span className="text-center">Unit price (€)</span>
+        <span className="text-right">Total</span>
+        <span />
+      </div>
+
       <div className="divide-y divide-[#D0E8F7]">
         {lines.map((line, idx) => (
-          <div key={line.id ?? `new-${idx}`} className="grid grid-cols-[1fr_6rem_6rem_2.5rem] items-center gap-3 py-3">
-            <span className="text-sm font-medium text-[#1a2e3b]">{line.name}</span>
+          <div
+            key={line.id ?? `new-${idx}`}
+            className="grid grid-cols-[1fr_2.5rem] items-center gap-2 py-3 md:grid-cols-[1fr_5rem_7rem_6rem_2.5rem]"
+          >
+            {/* Product selector */}
+            <select
+              value={line.productId}
+              onChange={(e) => changeProduct(idx, e.target.value)}
+              className={inputClass}
+            >
+              {products.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+
+            {/* Quantity */}
             <input
               type="number"
               min={1}
               value={line.quantity}
               onChange={(e) => setQty(idx, Number(e.target.value))}
-              className="rounded-lg border border-[#D0E8F7] px-3 py-2 text-sm"
+              className={`${inputClass} text-center`}
               aria-label="Quantity"
             />
+
+            {/* Unit price */}
+            <input
+              type="number"
+              min={0}
+              step="0.01"
+              value={line.unitPrice}
+              onChange={(e) => setUnitPrice(idx, Number(e.target.value))}
+              className={`${inputClass} text-center`}
+              aria-label="Unit price"
+            />
+
+            {/* Line total */}
             <span className="text-right text-sm font-black text-ocean-deep">
-              €{(line.basePrice * line.quantity).toFixed(2)}
+              €{(line.unitPrice * line.quantity).toFixed(2)}
             </span>
+
+            {/* Remove */}
             <button
               type="button"
               onClick={() => removeLine(idx)}
@@ -129,48 +190,23 @@ export default function BookingItemsEditor({
       </div>
 
       {lines.length === 0 && (
-        <p className="py-4 text-sm text-[#8AACCC]">No products yet. Add one below.</p>
+        <p className="py-4 text-sm text-[#8AACCC]">No products yet.</p>
       )}
 
-      <div className="mt-4 flex justify-end text-sm font-black text-ocean-deep">
-        Total (public): €{totalPublic.toFixed(2)}
-      </div>
-
-      {/* Add product row */}
-      <div className="mt-5 flex flex-wrap items-end gap-2 border-t border-[#D0E8F7] pt-4">
-        <label className="flex flex-1 min-w-[160px] flex-col gap-1 text-xs font-bold text-ocean-deep">
-          Product
-          <select
-            value={addProductId}
-            onChange={(e) => setAddProductId(e.target.value)}
-            className="rounded-lg border border-[#D0E8F7] bg-white px-3 py-2 text-sm text-[#1a2e3b] focus:outline-none focus:ring-2 focus:ring-ocean-mid"
-          >
-            <option value="">— Select —</option>
-            {available.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name} (€{p.basePrice})
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-xs font-bold text-ocean-deep">
-          Qty
-          <input
-            type="number"
-            min={1}
-            value={addQty}
-            onChange={(e) => setAddQty(Math.max(1, Number(e.target.value)))}
-            className="w-20 rounded-lg border border-[#D0E8F7] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ocean-mid"
-          />
-        </label>
+      {/* Add row */}
+      <div className="mt-3 flex items-center justify-between border-t border-[#D0E8F7] pt-3">
         <button
           type="button"
           onClick={addLine}
-          disabled={!addProductId}
-          className="rounded-full bg-ocean-mid px-4 py-2 text-sm font-black text-white disabled:opacity-40"
+          disabled={products.length === 0}
+          className="flex items-center gap-1.5 rounded-full bg-ocean-light px-4 py-2 text-sm font-black text-ocean-deep hover:bg-ocean-mid hover:text-white disabled:opacity-40"
         >
-          Add
+          <Plus size={14} />
+          Add product
         </button>
+        <span className="text-sm font-black text-ocean-deep">
+          Total: €{totalPublic.toFixed(2)}
+        </span>
       </div>
 
       {message && <p className="mt-3 text-sm font-bold text-ocean-mid">{message}</p>}

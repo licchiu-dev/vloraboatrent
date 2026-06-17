@@ -125,7 +125,7 @@ model PartnerPrice {
 model Customer {
   id        String    @id @default(cuid())
   name      String
-  email     String    @unique
+  email     String
   phone     String
   bookings  Booking[]
   createdAt DateTime  @default(now())
@@ -152,6 +152,15 @@ model Booking {
   createdBy     String
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
+  messages      BookingMessage[]
+}
+
+model BookingMessage {
+  id        String   @id @default(cuid())
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  bookingId String
+  text      String
+  sentAt    DateTime @default(now())
 }
 
 model FleetAsset {

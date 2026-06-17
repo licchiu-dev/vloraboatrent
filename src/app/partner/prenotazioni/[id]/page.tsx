@@ -33,7 +33,6 @@ export default async function PartnerBookingDetail({ params }: { params: Promise
         <Card>
           <BookingCoreEditor
             bookingId={booking.id}
-            customerId={booking.customerId}
             customer={booking.customer}
             date={booking.date}
             timeSlot={booking.timeSlot}

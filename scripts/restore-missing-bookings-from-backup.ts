@@ -74,6 +74,7 @@ function parseItems(value: string) {
 async function main() {
   const backupId = process.argv[2]
   const mode = process.argv[3] ?? 'dry-run'
+  const onlyIds = new Set(process.argv.slice(4))
   if (!backupId) throw new Error('Usage: tsx scripts/restore-missing-bookings-from-backup.ts <backupId> [restore]')
 
   const backup = await prisma.backupLog.findUnique({ where: { id: backupId } })
@@ -88,12 +89,12 @@ async function main() {
   const productRows = productsFile ? parseCsv(productsFile.content) : []
   const backupProductByName = new Map(productRows.map((row) => [row.Nome, row]))
   const existingIds = new Set((await prisma.booking.findMany({ select: { id: true } })).map((booking) => booking.id))
-  const missing = rows.filter((row) => row.ID && !existingIds.has(row.ID))
+  const missing = rows.filter((row) => row.ID && !existingIds.has(row.ID) && (onlyIds.size === 0 || onlyIds.has(row.ID)))
 
   const products = await prisma.product.findMany()
   const productByName = new Map(products.map((product) => [product.name, product]))
   const partners = await prisma.partner.findMany()
-  const partnerByName = new Map(partners.map((partner) => [partner.companyName, partner]))
+  const partnerByName = new Map(partners.map((partner) => [partner.companyName.trim(), partner]))
 
   const unresolvedProducts = new Set<string>()
   const restorableProducts = new Set<string>()
@@ -111,10 +112,15 @@ async function main() {
 
   console.log(`Backup ${backupId} (${backup.date.toISOString()})`)
   console.log(`Rows in backup: ${rows.length}`)
+  console.log(`ID filter: ${onlyIds.size ? [...onlyIds].join(', ') : '-'}`)
   console.log(`Missing booking IDs: ${missing.length}`)
   console.log(`Products to recreate inactive: ${restorableProducts.size ? [...restorableProducts].join(', ') : '-'}`)
   console.log(`Unresolved products: ${unresolvedProducts.size ? [...unresolvedProducts].join(', ') : '-'}`)
   console.log(`Unresolved partners: ${unresolvedPartners.size ? [...unresolvedPartners].join(', ') : '-'}`)
+  console.log('Missing rows:')
+  for (const row of missing) {
+    console.log(`- ${row.ID} | ${row['Data Prenotazione']} | ${row.Stato} | ${row['Nome Cliente']} | ${row['Nome Partner']?.trim() || '-'} | ${row['Prodotti (lista)']}`)
+  }
   if (unresolvedProducts.size) {
     console.log('Available products:')
     for (const product of products) {
@@ -143,13 +149,8 @@ async function main() {
   }
 
   for (const row of missing) {
-    const customer = await prisma.customer.upsert({
-      where: { email: row['Email Cliente'] },
-      update: {
-        name: row['Nome Cliente'],
-        phone: row.Telefono,
-      },
-      create: {
+    const customer = await prisma.customer.create({
+      data: {
         name: row['Nome Cliente'],
         email: row['Email Cliente'],
         phone: row.Telefono,

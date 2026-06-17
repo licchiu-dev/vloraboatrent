@@ -1,6 +1,9 @@
+import { randomUUID } from 'node:crypto'
 import type { BookingStatus, PaymentMethod, TimeSlot } from '@prisma/client'
 import { calcCommission, calcPartnerPrice, roundMoney } from './pricing'
 import { prisma } from './prisma'
+
+const REAL_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 type BookingInput = {
   customer: { name: string; email: string; phone: string }
@@ -50,10 +53,13 @@ export async function createBooking(input: BookingInput) {
   const totalPartner = partner ? roundMoney(lines.reduce((sum, line) => sum + line!.partnerTotal, 0)) : null
   const commission = partner ? roundMoney(lines.reduce((sum, line) => sum + line!.commission, 0)) : null
 
-  const customer = await prisma.customer.upsert({
-    where: { email: input.customer.email.toLowerCase() },
-    update: { name: input.customer.name, phone: input.customer.phone },
-    create: { ...input.customer, email: input.customer.email.toLowerCase() },
+  const rawEmail = input.customer.email.trim()
+  const customer = await prisma.customer.create({
+    data: {
+      name: input.customer.name,
+      email: REAL_EMAIL_RE.test(rawEmail) ? rawEmail.toLowerCase() : `no-email-${randomUUID()}@placeholder.local`,
+      phone: input.customer.phone,
+    },
   })
 
   const booking = await prisma.booking.create({

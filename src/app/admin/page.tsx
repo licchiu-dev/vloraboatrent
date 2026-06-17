@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { BookingStatus } from '@prisma/client'
 import { Badge, Card, PageHeader } from '@/components/admin/Ui'
 import { prisma } from '@/lib/prisma'
+import { bookingRevenue } from '@/lib/pricing'
 
 const SEASON_MONTHS = [
   { index: 5, label: 'Jun' },
@@ -26,17 +27,10 @@ export default async function AdminDashboard() {
   const seasonStart = new Date(year, 5, 1)
   const seasonEnd = new Date(year, 11, 1)
 
-  const [monthItems, urgentBookings, partnerCount, seasonItems] = await Promise.all([
-    prisma.bookingItem.findMany({
-      where: {
-        booking: {
-          date: { gte: monthStart, lt: monthEnd },
-          status: { in: REVENUE_STATUSES },
-        },
-      },
-      include: {
-        product: { select: { basePrice: true } },
-      },
+  const [monthBookings, urgentBookings, partnerCount, seasonBookings] = await Promise.all([
+    prisma.booking.findMany({
+      where: { date: { gte: monthStart, lt: monthEnd }, status: { in: REVENUE_STATUSES } },
+      select: { totalPublic: true },
     }),
     prisma.booking.findMany({
       where: { status: 'PENDING' },
@@ -44,27 +38,34 @@ export default async function AdminDashboard() {
       orderBy: { date: 'asc' },
     }),
     prisma.partner.count(),
-    prisma.bookingItem.findMany({
-      where: {
-        booking: {
-          date: { gte: seasonStart, lt: seasonEnd },
-          status: { in: REVENUE_STATUSES },
-        },
-      },
-      include: {
-        product: { select: { name: true, basePrice: true } },
-        booking: { select: { date: true } },
+    prisma.booking.findMany({
+      where: { date: { gte: seasonStart, lt: seasonEnd }, status: { in: REVENUE_STATUSES } },
+      select: {
+        date: true,
+        totalPublic: true,
+        items: { select: { quantity: true, product: { select: { name: true, basePrice: true } } } },
       },
     }),
   ])
 
-  const monthRevenue = monthItems.reduce((sum, item) => sum + item.product.basePrice * item.quantity, 0)
-  const rowNames = [...new Set(seasonItems.map((item) => baseName(item.product.name)))].sort()
+  // Use the booking's stored totalPublic (actual price at booking time) rather
+  // than recomputing from the live product catalog, which drifts as prices
+  // change across the season.
+  const monthRevenue = monthBookings.reduce((sum, booking) => sum + bookingRevenue(booking), 0)
+  const rowNames = [...new Set(seasonBookings.flatMap((booking) => booking.items.map((item) => baseName(item.product.name))))].sort()
 
   function cellRevenue(row: string, monthIndex: number) {
-    return seasonItems
-      .filter((item) => baseName(item.product.name) === row && item.booking.date.getMonth() === monthIndex)
-      .reduce((sum, item) => sum + item.product.basePrice * item.quantity, 0)
+    let sum = 0
+    for (const booking of seasonBookings) {
+      if (booking.date.getMonth() !== monthIndex) continue
+      const grossTotal = booking.items.reduce((s, item) => s + item.product.basePrice * item.quantity, 0)
+      if (grossTotal <= 0) continue
+      for (const item of booking.items) {
+        if (baseName(item.product.name) !== row) continue
+        sum += bookingRevenue(booking) * ((item.product.basePrice * item.quantity) / grossTotal)
+      }
+    }
+    return sum
   }
 
   function rowTotal(row: string) {

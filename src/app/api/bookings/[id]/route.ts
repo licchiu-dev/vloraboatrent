@@ -20,6 +20,46 @@ async function syncPartnerEarnings(partnerId: string) {
   await prisma.partner.update({ where: { id: partnerId }, data: { totalEarnings, pendingEarnings } })
 }
 
+function customerData(body: unknown) {
+  if (!body || typeof body !== 'object') return null
+  const customer = (body as { customer?: unknown }).customer
+  if (!customer || typeof customer !== 'object') return null
+  const payload = customer as { name?: unknown; email?: unknown; phone?: unknown }
+  return {
+    name: typeof payload.name === 'string' ? payload.name : undefined,
+    email: typeof payload.email === 'string' ? payload.email.trim().toLowerCase() : undefined,
+    phone: typeof payload.phone === 'string' ? payload.phone : undefined,
+  }
+}
+
+async function updateBookingCustomer(bookingId: string, data: { name?: string; email?: string; phone?: string }) {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    select: { customerId: true },
+  })
+  if (!booking) return
+
+  const usedByBookings = await prisma.booking.count({ where: { customerId: booking.customerId } })
+  if (usedByBookings > 1) {
+    const existing = await prisma.customer.findUnique({ where: { id: booking.customerId } })
+    if (!existing) return
+    const customer = await prisma.customer.create({
+      data: {
+        name: data.name ?? existing.name,
+        email: data.email ?? existing.email,
+        phone: data.phone ?? existing.phone,
+      },
+    })
+    await prisma.booking.update({ where: { id: bookingId }, data: { customerId: customer.id } })
+    return
+  }
+
+  await prisma.customer.update({
+    where: { id: booking.customerId },
+    data,
+  })
+}
+
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const guard = await apiRequireRole(['SUPERADMIN', 'ADMIN', 'PARTNER'])
   if ('error' in guard) return guard.error
@@ -33,14 +73,38 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (!booking || booking.partnerId !== guard.session.user.partnerId) {
       return Response.json({ error: 'Forbidden' }, { status: 403 })
     }
-    const updated = await prisma.booking.update({
-      where: { id },
-      data: {
-        date: body.date ? new Date(body.date) : undefined,
-        timeSlot: body.timeSlot,
-        notes: body.notes !== undefined ? (body.notes || null) : undefined,
-        status: body.status,
-      },
+    const customer = customerData(body)
+    const updated = await prisma.$transaction(async (tx) => {
+      if (customer) {
+        const current = await tx.booking.findUnique({ where: { id }, select: { customerId: true } })
+        if (current) {
+          const usedByBookings = await tx.booking.count({ where: { customerId: current.customerId } })
+          if (usedByBookings > 1) {
+            const existing = await tx.customer.findUnique({ where: { id: current.customerId } })
+            if (existing) {
+              const nextCustomer = await tx.customer.create({
+                data: {
+                  name: customer.name ?? existing.name,
+                  email: customer.email ?? existing.email,
+                  phone: customer.phone ?? existing.phone,
+                },
+              })
+              await tx.booking.update({ where: { id }, data: { customerId: nextCustomer.id } })
+            }
+          } else {
+            await tx.customer.update({ where: { id: current.customerId }, data: customer })
+          }
+        }
+      }
+      return tx.booking.update({
+        where: { id },
+        data: {
+          date: body.date ? new Date(body.date) : undefined,
+          timeSlot: body.timeSlot,
+          notes: body.notes !== undefined ? (body.notes || null) : undefined,
+          status: body.status,
+        },
+      })
     })
     // Sync partner totals if status changed (e.g. PENDING→CONFIRMED)
     if (body.status && booking.partnerId) await syncPartnerEarnings(booking.partnerId)
@@ -48,6 +112,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   // --- SUPERADMIN / ADMIN below ---
+  const customer = customerData(body)
+  if (customer) await updateBookingCustomer(id, customer)
 
   if (Array.isArray(body.items)) {
     const existingItems = await prisma.bookingItem.findMany({

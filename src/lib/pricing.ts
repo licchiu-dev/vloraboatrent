@@ -19,3 +19,8 @@ export function calcCommission(product: ProductWithPartnerPrices, partner: Partn
 export function roundMoney(value: number) {
   return Math.round(value * 100) / 100
 }
+
+// Total public revenue collected from the customer for a booking.
+export function bookingRevenue(booking: { totalPublic: number | null }) {
+  return booking.totalPublic ?? 0
+}

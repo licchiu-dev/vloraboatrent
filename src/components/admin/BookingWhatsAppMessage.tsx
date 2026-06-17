@@ -4,9 +4,13 @@ import { useEffect, useState } from 'react'
 import { Check, Copy, MessageCircle } from 'lucide-react'
 import { format } from 'date-fns'
 
+type Message = { id: string; text: string; sentAt: string }
+
 type Props = {
+  bookingId: string
   date: Date
   totalPublic: number | null
+  initialMessages: Message[]
 }
 
 function buildMessage({
@@ -76,7 +80,7 @@ function buildMessage({
 const inputClass =
   'w-full rounded-lg border border-[#D0E8F7] bg-white px-3 py-2 text-sm text-[#1a2e3b] focus:outline-none focus:ring-2 focus:ring-ocean-mid'
 
-export default function BookingWhatsAppMessage({ date, totalPublic }: Props) {
+export default function BookingWhatsAppMessage({ bookingId, date, totalPublic, initialMessages }: Props) {
   const [arrivalTime, setArrivalTime] = useState('')
   const [numPeople, setNumPeople] = useState('')
   const [paymentLink, setPaymentLink] = useState('')
@@ -84,6 +88,9 @@ export default function BookingWhatsAppMessage({ date, totalPublic }: Props) {
     buildMessage({ date, totalPublic, arrivalTime: '', numPeople: '', paymentLink: '' })
   )
   const [copied, setCopied] = useState(false)
+  const [history, setHistory] = useState<Message[]>(initialMessages)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [copiedHistoryId, setCopiedHistoryId] = useState<string | null>(null)
 
   useEffect(() => {
     setText(buildMessage({ date, totalPublic, arrivalTime, numPeople, paymentLink }))
@@ -93,6 +100,22 @@ export default function BookingWhatsAppMessage({ date, totalPublic }: Props) {
     await navigator.clipboard.writeText(text)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+
+    const res = await fetch(`/api/bookings/${bookingId}/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    })
+    if (res.ok) {
+      const saved: Message = await res.json()
+      setHistory((prev) => [saved, ...prev])
+    }
+  }
+
+  async function copyFromHistory(msg: Message) {
+    await navigator.clipboard.writeText(msg.text)
+    setCopiedHistoryId(msg.id)
+    setTimeout(() => setCopiedHistoryId(null), 2000)
   }
 
   return (
@@ -150,6 +173,59 @@ export default function BookingWhatsAppMessage({ date, totalPublic }: Props) {
         {copied ? <Check size={16} /> : <Copy size={16} />}
         {copied ? 'Copied!' : 'Copy message'}
       </button>
+
+      {history.length > 0 && (
+        <div className="mt-5 border-t border-[#D0E8F7] pt-4">
+          <p className="mb-3 text-xs font-bold uppercase tracking-widest text-[#8AACCC]">
+            Sent messages ({history.length})
+          </p>
+          <div className="space-y-2">
+            {history.map((msg) => {
+              const isExpanded = expandedId === msg.id
+              const preview = msg.text.split('\n').slice(0, 2).join(' ').slice(0, 80)
+              const sentAt = new Date(msg.sentAt)
+              return (
+                <div key={msg.id} className="rounded-lg border border-[#D0E8F7] bg-white p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-[#4A6580]">
+                        {format(sentAt, 'dd/MM/yyyy HH:mm')}
+                      </p>
+                      <p className="mt-0.5 truncate text-xs text-[#1a2e3b]">{preview}…</p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => copyFromHistory(msg)}
+                        title="Copy this message"
+                        className={`rounded-full px-2.5 py-1 text-xs font-black transition ${
+                          copiedHistoryId === msg.id
+                            ? 'bg-emerald-500 text-white'
+                            : 'bg-ocean-light text-ocean-deep hover:bg-ocean-mid hover:text-white'
+                        }`}
+                      >
+                        {copiedHistoryId === msg.id ? '✓' : 'Copy'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setExpandedId(isExpanded ? null : msg.id)}
+                        className="rounded-full bg-ocean-light px-2.5 py-1 text-xs font-black text-ocean-deep hover:bg-ocean-mid hover:text-white"
+                      >
+                        {isExpanded ? 'Hide' : 'View'}
+                      </button>
+                    </div>
+                  </div>
+                  {isExpanded && (
+                    <pre className="mt-2 whitespace-pre-wrap rounded border border-[#D0E8F7] bg-[#f6fbff] p-2 text-xs leading-relaxed text-[#1a2e3b]">
+                      {msg.text}
+                    </pre>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

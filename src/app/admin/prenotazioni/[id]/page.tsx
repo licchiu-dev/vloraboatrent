@@ -11,10 +11,13 @@ import { prisma } from '@/lib/prisma'
 
 export default async function BookingDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const booking = await prisma.booking.findUnique({
-    where: { id },
-    include: { customer: true, partner: true, items: { include: { product: true } }, fleetAssignments: true },
-  })
+  const [booking, messages] = await Promise.all([
+    prisma.booking.findUnique({
+      where: { id },
+      include: { customer: true, partner: true, items: { include: { product: true } }, fleetAssignments: true },
+    }),
+    prisma.bookingMessage.findMany({ where: { bookingId: id }, orderBy: { sentAt: 'desc' } }),
+  ])
   if (!booking) notFound()
 
   return (
@@ -24,7 +27,6 @@ export default async function BookingDetail({ params }: { params: Promise<{ id: 
         <Card>
           <BookingCoreEditor
             bookingId={booking.id}
-            customerId={booking.customerId}
             customer={booking.customer}
             date={booking.date}
             timeSlot={booking.timeSlot}
@@ -61,8 +63,10 @@ export default async function BookingDetail({ params }: { params: Promise<{ id: 
               initialAssetIds={booking.fleetAssignments.map((a) => a.fleetAssetId)}
             />
             <BookingWhatsAppMessage
+              bookingId={booking.id}
               date={booking.date}
               totalPublic={booking.totalPublic}
+              initialMessages={messages.map((m) => ({ ...m, sentAt: m.sentAt.toISOString() }))}
             />
             <DeleteBookingButton bookingId={booking.id} />
           </Card>

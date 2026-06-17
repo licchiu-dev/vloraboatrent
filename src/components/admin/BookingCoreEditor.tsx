@@ -5,7 +5,6 @@ import { useState } from 'react'
 
 type Props = {
   bookingId: string
-  customerId: string
   customer: { name: string; email: string; phone: string }
   date: Date
   timeSlot: string
@@ -29,7 +28,6 @@ const inputClass =
 
 export default function BookingCoreEditor({
   bookingId,
-  customerId,
   customer,
   date,
   timeSlot,
@@ -54,26 +52,20 @@ export default function BookingCoreEditor({
     setSaving(true)
     setMessage('')
 
-    const [customerRes, bookingRes] = await Promise.all([
-      fetch(`/api/customers/${customerId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, phone }),
+    const bookingRes = await fetch(`/api/bookings/${bookingId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customer: { name, email, phone },
+        date: bookingDate,
+        timeSlot: slot,
+        notes: customerNotes,
+        ...(showInternalNotes ? { internalNotes: internal } : {}),
       }),
-      fetch(`/api/bookings/${bookingId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          date: bookingDate,
-          timeSlot: slot,
-          notes: customerNotes,
-          ...(showInternalNotes ? { internalNotes: internal } : {}),
-        }),
-      }),
-    ])
+    })
 
     setSaving(false)
-    if (!customerRes.ok || !bookingRes.ok) {
+    if (!bookingRes.ok) {
       setIsError(true)
       setMessage('Save failed. Check the data and try again.')
       return

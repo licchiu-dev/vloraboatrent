@@ -1,13 +1,17 @@
 import { Card, PageHeader } from '@/components/admin/Ui'
 import { prisma } from '@/lib/prisma'
+import { bookingRevenue } from '@/lib/pricing'
 
 export default async function StatsPage() {
   const [bookings, expenses, partners] = await Promise.all([
-    prisma.booking.findMany({ include: { partner: true, items: { include: { product: true } } } }),
+    prisma.booking.findMany({
+      where: { status: { in: ['CONFIRMED', 'COMPLETED'] } },
+      include: { partner: true, items: { include: { product: true } } },
+    }),
     prisma.expense.findMany(),
     prisma.partner.findMany({ include: { bookings: true } }),
   ])
-  const revenue = bookings.reduce((sum, booking) => sum + (booking.totalPublic ?? 0), 0)
+  const revenue = bookings.reduce((sum, booking) => sum + bookingRevenue(booking), 0)
   const costs = expenses.reduce((sum, expense) => sum + expense.amount, 0)
   const direct = bookings.filter((booking) => !booking.partnerId).length
   const viaPartner = bookings.length - direct

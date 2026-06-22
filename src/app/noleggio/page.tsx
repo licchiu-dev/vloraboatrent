@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
-import { ProductCategory } from '@prisma/client'
 import PublicRental from '@/components/public/PublicRental'
-import { formatEuroPrice, getMinimumProductPrice } from '@/lib/public-pricing'
+import { getSitePrices } from '@/lib/public-pricing'
 
 export const metadata: Metadata = {
   title: 'Boat Rental Vlora Albania — No License Required',
@@ -17,6 +16,6 @@ export const metadata: Metadata = {
 }
 
 export default async function NoleggioPage() {
-  const startingPrice = formatEuroPrice(await getMinimumProductPrice(ProductCategory.NOLEGGIO))
-  return <PublicRental lang="en" startingPrice={startingPrice} />
+  const sitePrices = await getSitePrices()
+  return <PublicRental lang="en" sitePrices={sitePrices} />
 }

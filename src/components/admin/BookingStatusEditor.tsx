@@ -51,9 +51,12 @@ export default function BookingStatusEditor({
         <label className="text-sm font-bold text-ocean-deep">
           Payment method
           <select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value)} className="mt-2 w-full rounded-lg border border-[#D0E8F7] bg-white px-3 py-2">
+            <option value="REVOLUT">Revolut</option>
+            <option value="POS">POS (carta)</option>
+            <option value="CONTANTI">Contanti</option>
             <option value="ONLINE">Online</option>
             <option value="PARTNER">Partner</option>
-            <option value="MOLO">At the dock</option>
+            <option value="MOLO">Al molo</option>
           </select>
         </label>
       </div>

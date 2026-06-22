@@ -48,6 +48,9 @@ enum PaymentMethod {
   ONLINE
   PARTNER
   MOLO
+  REVOLUT
+  POS
+  CONTANTI
 }
 
 model User {
@@ -225,4 +228,12 @@ model BackupLog {
   files    String[]
   error    String?
   snapshot Json?    // stores {files:[{filename,content}]} for per-backup download
+}
+
+// Prices shown on the public website, editable from the admin panel.
+model SitePrice {
+  key       String   @id  // 'gommone' | 'gommone_piccolo' | 'barca'
+  label     String
+  price     Float
+  updatedAt DateTime @updatedAt
 }

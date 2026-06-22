@@ -49,3 +49,13 @@ export function formatEuroPrice(value: number | null | undefined, fallback = '�
   if (value == null) return fallback
   return `€${value.toLocaleString('it-IT', { maximumFractionDigits: 0 })}`
 }
+
+export async function getSitePrices(): Promise<Record<string, string>> {
+  if (isDemoMode()) {
+    return { gommone: '€200', gommone_piccolo: '€150', barca: '€180' }
+  }
+  const rows = await prisma.sitePrice.findMany()
+  const defaults: Record<string, number> = { gommone: 200, gommone_piccolo: 150, barca: 180 }
+  const all = { ...defaults, ...Object.fromEntries(rows.map((r) => [r.key, r.price])) }
+  return Object.fromEntries(Object.entries(all).map(([k, v]) => [k, formatEuroPrice(v)]))
+}

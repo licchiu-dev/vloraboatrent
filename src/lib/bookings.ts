@@ -11,12 +11,16 @@ type BookingInput = {
   timeSlot: TimeSlot
   status: BookingStatus
   paymentMethod?: PaymentMethod
-  items: { productId: string; quantity: number }[]
+  items: { productId: string; quantity: number; unitPrice?: number }[]
   partnerId?: string | null
   discountCode?: string | null
   notes?: string | null
   internalNotes?: string | null
   createdBy: string
+  // Optional explicit overrides — if provided, skip item-based calculation
+  totalPublicOverride?: number | null
+  totalPartnerOverride?: number | null
+  commissionOverride?: number | null
 }
 
 export async function createBooking(input: BookingInput) {
@@ -36,22 +40,31 @@ export async function createBooking(input: BookingInput) {
       const product = products.find((candidate) => candidate.id === item.productId)
       if (!product) return null
       const quantity = Math.max(1, Number(item.quantity) || 1)
-      const publicTotal = product.basePrice * quantity
-      const partnerUnit = partner ? calcPartnerPrice(product, partner) : product.basePrice
+      // Admin-provided unit price takes precedence over catalog price
+      const publicUnit = item.unitPrice != null ? Math.max(0, Number(item.unitPrice)) : product.basePrice
+      const publicTotal = publicUnit * quantity
+      const partnerUnit = partner ? calcPartnerPrice(product, partner) : publicUnit
       return {
         product,
         quantity,
+        publicUnit,
         publicTotal,
         partnerUnit,
         partnerTotal: partnerUnit * quantity,
-        commission: partner ? calcCommission(product, partner, quantity) : 0,
+        commission: partner ? roundMoney(publicUnit - partnerUnit) * quantity : 0,
       }
     })
     .filter(Boolean)
 
-  const totalPublic = roundMoney(lines.reduce((sum, line) => sum + line!.publicTotal, 0))
-  const totalPartner = partner ? roundMoney(lines.reduce((sum, line) => sum + line!.partnerTotal, 0)) : null
-  const commission = partner ? roundMoney(lines.reduce((sum, line) => sum + line!.commission, 0)) : null
+  const totalPublic = input.totalPublicOverride != null
+    ? roundMoney(input.totalPublicOverride)
+    : roundMoney(lines.reduce((sum, line) => sum + line!.publicTotal, 0))
+  const totalPartner = input.totalPartnerOverride != null
+    ? roundMoney(input.totalPartnerOverride)
+    : partner ? roundMoney(lines.reduce((sum, line) => sum + line!.partnerTotal, 0)) : null
+  const commission = input.commissionOverride != null
+    ? roundMoney(input.commissionOverride)
+    : partner ? roundMoney(lines.reduce((sum, line) => sum + line!.commission, 0)) : null
 
   const rawEmail = input.customer.email.trim()
   const customer = await prisma.customer.create({
@@ -81,8 +94,8 @@ export async function createBooking(input: BookingInput) {
         create: lines.map((line) => ({
           productId: line!.product.id,
           quantity: line!.quantity,
-          unitPrice: line!.partnerUnit,
-          total: roundMoney(line!.partnerTotal),
+          unitPrice: line!.publicUnit,
+          total: roundMoney(line!.publicTotal),
         })),
       },
     },

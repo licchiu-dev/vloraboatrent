@@ -27,7 +27,7 @@ export default async function AdminDashboard() {
   const seasonStart = new Date(year, 5, 1)
   const seasonEnd = new Date(year, 11, 1)
 
-  const [monthBookings, urgentBookings, partnerCount, seasonBookings] = await Promise.all([
+  const [monthBookings, urgentBookings, partnerCount, seasonBookings, paymentBreakdown] = await Promise.all([
     prisma.booking.findMany({
       where: { date: { gte: monthStart, lt: monthEnd }, status: { in: REVENUE_STATUSES } },
       select: { totalPublic: true },
@@ -45,6 +45,11 @@ export default async function AdminDashboard() {
         totalPublic: true,
         items: { select: { quantity: true, product: { select: { name: true, basePrice: true } } } },
       },
+    }),
+    // Payment method breakdown: last 6 months
+    prisma.booking.findMany({
+      where: { date: { gte: new Date(year, currentMonth - 5, 1), lt: monthEnd }, status: { in: REVENUE_STATUSES } },
+      select: { date: true, totalPublic: true, paymentMethod: true },
     }),
   ])
 
@@ -77,6 +82,29 @@ export default async function AdminDashboard() {
   }
 
   const grandTotal = SEASON_MONTHS.reduce((sum, m) => sum + colTotal(m.index), 0)
+
+  // Payment breakdown: build month × method matrix for last 6 months
+  const PAY_METHODS = [
+    { key: 'REVOLUT', label: 'Revolut' },
+    { key: 'POS', label: 'POS' },
+    { key: 'CONTANTI', label: 'Contanti' },
+    { key: 'ONLINE', label: 'Online' },
+    { key: 'PARTNER', label: 'Partner' },
+    { key: 'MOLO', label: 'Al molo' },
+  ]
+  const payMonths = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(year, currentMonth - 5 + i, 1)
+    return { index: d.getMonth(), year: d.getFullYear(), label: d.toLocaleString('it-IT', { month: 'short', year: '2-digit' }) }
+  })
+  function payCell(method: string, monthIndex: number, monthYear: number) {
+    return paymentBreakdown
+      .filter((b) => b.paymentMethod === method && b.date.getMonth() === monthIndex && b.date.getFullYear() === monthYear)
+      .reduce((s, b) => s + bookingRevenue(b), 0)
+  }
+  function payMethodTotal(method: string) {
+    return payMonths.reduce((s, m) => s + payCell(method, m.index, m.year), 0)
+  }
+  const usedMethods = PAY_METHODS.filter((m) => payMethodTotal(m.key) > 0)
 
   return (
     <>
@@ -188,6 +216,64 @@ export default async function AdminDashboard() {
                   )
                 })}
                 <td className="pt-3 text-right font-black text-ocean-deep">€{grandTotal.toFixed(0)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        )}
+      </Card>
+
+      <Card className="mt-6 overflow-x-auto">
+        <h2 className="text-xl font-black text-ocean-deep">Incasso per metodo di pagamento</h2>
+        <p className="mt-1 mb-5 text-sm text-[#4A6580]">
+          Ultimi 6 mesi · Booking confermati e completati.
+        </p>
+        {usedMethods.length === 0 ? (
+          <p className="py-10 text-center text-[#4A6580]">Nessun dato disponibile.</p>
+        ) : (
+          <table className="w-full min-w-[640px] text-sm">
+            <thead>
+              <tr className="border-b border-[#D0E8F7]">
+                <th className="pb-3 text-left font-bold text-[#4A6580]">Metodo</th>
+                {payMonths.map((m) => (
+                  <th key={`${m.year}-${m.index}`} className="pb-3 text-right font-bold text-[#4A6580]">
+                    {m.label}
+                  </th>
+                ))}
+                <th className="pb-3 text-right font-black text-ocean-deep">Totale</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#D0E8F7]">
+              {usedMethods.map((method) => (
+                <tr key={method.key}>
+                  <td className="py-3 font-bold text-ocean-deep">{method.label}</td>
+                  {payMonths.map((m) => {
+                    const val = payCell(method.key, m.index, m.year)
+                    return (
+                      <td key={`${m.year}-${m.index}`} className="py-3 text-right text-[#4A6580]">
+                        {val > 0 ? `€${val.toFixed(0)}` : '—'}
+                      </td>
+                    )
+                  })}
+                  <td className="py-3 text-right font-black text-ocean-deep">
+                    €{payMethodTotal(method.key).toFixed(0)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="border-t-2 border-[#D0E8F7]">
+                <td className="pt-3 font-black text-ocean-deep">Totale</td>
+                {payMonths.map((m) => {
+                  const val = usedMethods.reduce((s, method) => s + payCell(method.key, m.index, m.year), 0)
+                  return (
+                    <td key={`${m.year}-${m.index}`} className="pt-3 text-right font-black text-ocean-deep">
+                      {val > 0 ? `€${val.toFixed(0)}` : '—'}
+                    </td>
+                  )
+                })}
+                <td className="pt-3 text-right font-black text-ocean-deep">
+                  €{usedMethods.reduce((s, m) => s + payMethodTotal(m.key), 0).toFixed(0)}
+                </td>
               </tr>
             </tfoot>
           </table>

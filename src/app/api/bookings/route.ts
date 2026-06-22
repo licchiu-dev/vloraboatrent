@@ -40,6 +40,9 @@ export async function POST(request: Request) {
     notes: body.notes,
     internalNotes: isPartner ? null : body.internalNotes,
     createdBy: isPartner ? 'PARTNER' : 'ADMIN',
+    totalPublicOverride: isPartner ? undefined : (body.totalPublic != null ? Number(body.totalPublic) : undefined),
+    totalPartnerOverride: isPartner ? undefined : (body.totalPartner != null ? Number(body.totalPartner) : undefined),
+    commissionOverride: isPartner ? undefined : (body.commission != null ? Number(body.commission) : undefined),
   })
 
   if (isPartner) {

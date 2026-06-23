@@ -49,6 +49,7 @@ export default async function PartnerBookingDetail({ params }: { params: Promise
               bookingId={booking.id}
               initialStatus={booking.status}
               initialPaymentMethod={booking.paymentMethod}
+              initialPaymentInstrument={booking.paymentInstrument ?? null}
             />
           </Card>
           <Card>

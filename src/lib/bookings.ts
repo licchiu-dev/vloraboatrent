@@ -11,6 +11,7 @@ type BookingInput = {
   timeSlot: TimeSlot
   status: BookingStatus
   paymentMethod?: PaymentMethod
+  paymentInstrument?: import('@prisma/client').PaymentInstrument | null
   items: { productId: string; quantity: number; unitPrice?: number }[]
   partnerId?: string | null
   discountCode?: string | null
@@ -82,6 +83,7 @@ export async function createBooking(input: BookingInput) {
       timeSlot: input.timeSlot,
       status: input.status,
       paymentMethod: input.paymentMethod ?? 'MOLO',
+      paymentInstrument: input.paymentInstrument ?? null,
       partnerId: partner?.id,
       discountCode: partner?.discountCode ?? input.discountCode,
       totalPublic,

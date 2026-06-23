@@ -48,6 +48,9 @@ enum PaymentMethod {
   ONLINE
   PARTNER
   MOLO
+}
+
+enum PaymentInstrument {
   REVOLUT
   POS
   CONTANTI
@@ -141,8 +144,9 @@ model Booking {
   date          DateTime
   timeSlot      TimeSlot
   status        BookingStatus
-  paymentMethod PaymentMethod @default(MOLO)
-  items         BookingItem[]
+  paymentMethod      PaymentMethod      @default(MOLO)
+  paymentInstrument  PaymentInstrument?
+  items              BookingItem[]
   fleetAssignments BookingFleetAssignment[]
   partner       Partner?      @relation(fields: [partnerId], references: [id])
   partnerId     String?

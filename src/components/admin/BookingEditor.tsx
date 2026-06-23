@@ -10,13 +10,17 @@ type LineItem = { productId: string; quantity: number; unitPrice: number }
 const inputClass = 'mt-1.5 w-full rounded-lg border border-[#D0E8F7] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ocean-mid'
 const labelClass = 'text-sm font-bold text-ocean-deep'
 
-const PAYMENT_OPTIONS = [
+const PAYMENT_METHOD_OPTIONS = [
+  { value: 'MOLO', label: 'Al molo' },
+  { value: 'ONLINE', label: 'Online' },
+  { value: 'PARTNER', label: 'Partner' },
+]
+
+const PAYMENT_INSTRUMENT_OPTIONS = [
+  { value: '', label: '— non specificato —' },
   { value: 'REVOLUT', label: 'Revolut' },
   { value: 'POS', label: 'POS (carta)' },
   { value: 'CONTANTI', label: 'Contanti' },
-  { value: 'ONLINE', label: 'Online' },
-  { value: 'PARTNER', label: 'Partner' },
-  { value: 'MOLO', label: 'Al molo' },
 ]
 
 export default function BookingEditor({ partnerMode = false }: { partnerMode?: boolean }) {
@@ -30,7 +34,8 @@ export default function BookingEditor({ partnerMode = false }: { partnerMode?: b
   const [form, setForm] = useState({
     name: '', email: '', phone: '',
     date: '', timeSlot: 'GIORNATA_INTERA',
-    paymentMethod: 'REVOLUT',
+    paymentMethod: 'MOLO',
+    paymentInstrument: '',
     partnerId: '', discountCode: '',
     notes: '', internalNotes: '',
     status: 'CONFIRMED',
@@ -94,6 +99,7 @@ export default function BookingEditor({ partnerMode = false }: { partnerMode?: b
         date: form.date,
         timeSlot: form.timeSlot,
         paymentMethod: form.paymentMethod,
+        paymentInstrument: form.paymentInstrument || null,
         status: form.status,
         partnerId: form.partnerId || undefined,
         discountCode: form.discountCode || undefined,
@@ -164,9 +170,14 @@ export default function BookingEditor({ partnerMode = false }: { partnerMode?: b
               </select>
             </label>
           )}
-          <label className={labelClass}>Pagamento
+          <label className={labelClass}>Quando paga
             <select value={form.paymentMethod} onChange={(e) => setForm({ ...form, paymentMethod: e.target.value })} className={inputClass}>
-              {PAYMENT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              {PAYMENT_METHOD_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </label>
+          <label className={labelClass}>Come paga
+            <select value={form.paymentInstrument} onChange={(e) => setForm({ ...form, paymentInstrument: e.target.value })} className={inputClass}>
+              {PAYMENT_INSTRUMENT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </label>
         </div>

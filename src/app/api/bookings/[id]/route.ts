@@ -191,6 +191,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     data: {
       status: body.status,
       paymentMethod: body.paymentMethod,
+      paymentInstrument: body.paymentInstrument !== undefined ? (body.paymentInstrument || null) : undefined,
       notes: body.notes !== undefined ? (body.notes || null) : undefined,
       internalNotes: body.internalNotes !== undefined ? (body.internalNotes || null) : undefined,
       date: body.date ? new Date(body.date) : undefined,

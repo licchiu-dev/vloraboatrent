@@ -58,6 +58,7 @@ export default async function BookingDetail({ params }: { params: Promise<{ id: 
               bookingId={booking.id}
               initialStatus={booking.status}
               initialPaymentMethod={booking.paymentMethod}
+              initialPaymentInstrument={booking.paymentInstrument ?? null}
             />
             <AssetAssignmentEditor
               bookingId={booking.id}

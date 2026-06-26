@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export type FormTipo = 'noleggio' | 'esperienza' | 'generico'
 
@@ -12,18 +12,17 @@ interface BookingFormProps {
 interface FormData {
   nome: string
   email: string
-  telefono: string
+  phonePrefix: string
+  phoneNumber: string
   data: string
   fascia: string
   note: string
   discountCode: string
-  // Campi noleggio / generico
   adulti: number
   bambini: number
   snorkeling: number
   actionCam: number
   setTramonto: number
-  // Campi esperienza
   esperienzaPesca: string
   partecipanti: number
   cannaMulinello: number
@@ -50,7 +49,8 @@ interface FormErrors {
 const initialData: FormData = {
   nome: '',
   email: '',
-  telefono: '',
+  phonePrefix: '+39',
+  phoneNumber: '',
   data: '',
   fascia: '',
   note: '',
@@ -74,11 +74,137 @@ const initialData: FormData = {
   torciaSub: 0,
 }
 
+const DIAL_CODES = [
+  { code: '+355', country: 'Albania' },
+  { code: '+39', country: 'Italy' },
+  { code: '+383', country: 'Kosovo' },
+  { code: '+382', country: 'Montenegro' },
+  { code: '+389', country: 'N. Macedonia' },
+  { code: '+381', country: 'Serbia' },
+  { code: '+387', country: 'Bosnia' },
+  { code: '+385', country: 'Croatia' },
+  { code: '+386', country: 'Slovenia' },
+  { code: '+30', country: 'Greece' },
+  { code: '+40', country: 'Romania' },
+  { code: '+359', country: 'Bulgaria' },
+  { code: '+43', country: 'Austria' },
+  { code: '+41', country: 'Switzerland' },
+  { code: '+49', country: 'Germany' },
+  { code: '+33', country: 'France' },
+  { code: '+44', country: 'UK' },
+  { code: '+34', country: 'Spain' },
+  { code: '+31', country: 'Netherlands' },
+  { code: '+32', country: 'Belgium' },
+  { code: '+351', country: 'Portugal' },
+  { code: '+352', country: 'Luxembourg' },
+  { code: '+45', country: 'Denmark' },
+  { code: '+46', country: 'Sweden' },
+  { code: '+47', country: 'Norway' },
+  { code: '+358', country: 'Finland' },
+  { code: '+48', country: 'Poland' },
+  { code: '+420', country: 'Czech Rep.' },
+  { code: '+421', country: 'Slovakia' },
+  { code: '+36', country: 'Hungary' },
+  { code: '+7', country: 'Russia' },
+  { code: '+380', country: 'Ukraine' },
+  { code: '+90', country: 'Turkey' },
+  { code: '+1', country: 'USA / Canada' },
+  { code: '+52', country: 'Mexico' },
+  { code: '+55', country: 'Brazil' },
+  { code: '+54', country: 'Argentina' },
+  { code: '+971', country: 'UAE' },
+  { code: '+966', country: 'Saudi Arabia' },
+  { code: '+964', country: 'Iraq' },
+  { code: '+963', country: 'Syria' },
+  { code: '+961', country: 'Lebanon' },
+  { code: '+972', country: 'Israel' },
+  { code: '+20', country: 'Egypt' },
+  { code: '+212', country: 'Morocco' },
+  { code: '+213', country: 'Algeria' },
+  { code: '+216', country: 'Tunisia' },
+  { code: '+218', country: 'Libya' },
+  { code: '+86', country: 'China' },
+  { code: '+81', country: 'Japan' },
+  { code: '+82', country: 'S. Korea' },
+  { code: '+91', country: 'India' },
+  { code: '+61', country: 'Australia' },
+  { code: '+64', country: 'New Zealand' },
+]
+
 const labelClass = 'block text-sm font-semibold text-ocean-deep mb-2'
 const baseInputClass =
   'w-full px-4 py-3.5 rounded-xl border-2 font-[inherit] text-base text-[#0A1628] bg-white transition-all duration-200 outline-none focus:border-ocean-bright focus:ring-4 focus:ring-ocean-bright/10 placeholder-[#8AACCC]'
 const validInputClass = `${baseInputClass} border-[#D0E8F7]`
 const errorInputClass = `${baseInputClass} border-red-400 bg-red-50/50`
+
+function PhonePrefixCombobox({
+  value,
+  onChange,
+  error,
+}: {
+  value: string
+  onChange: (v: string) => void
+  error?: boolean
+}) {
+  const [query, setQuery] = useState(value)
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function onOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false)
+        setQuery(value) // revert to last valid
+      }
+    }
+    document.addEventListener('mousedown', onOutside)
+    return () => document.removeEventListener('mousedown', onOutside)
+  }, [value])
+
+  const filtered = DIAL_CODES.filter(
+    (d) =>
+      d.code.startsWith(query.startsWith('+') ? query : `+${query}`) ||
+      d.country.toLowerCase().includes(query.toLowerCase()),
+  ).slice(0, 8)
+
+  function select(code: string) {
+    setQuery(code)
+    onChange(code)
+    setOpen(false)
+  }
+
+  return (
+    <div ref={containerRef} className="relative w-28 shrink-0">
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => {
+          setQuery(e.target.value)
+          setOpen(true)
+        }}
+        onFocus={() => setOpen(true)}
+        placeholder="+39"
+        className={`w-full px-3 py-3.5 rounded-xl border-2 font-[inherit] text-base text-center text-[#0A1628] bg-white outline-none focus:border-ocean-bright focus:ring-4 focus:ring-ocean-bright/10 placeholder-[#8AACCC] transition-all duration-200 ${
+          error ? 'border-red-400 bg-red-50/50' : 'border-[#D0E8F7]'
+        }`}
+      />
+      {open && filtered.length > 0 && (
+        <ul className="absolute z-50 left-0 mt-1 w-64 max-h-52 overflow-y-auto rounded-xl border border-[#D0E8F7] bg-white shadow-xl">
+          {filtered.map((d) => (
+            <li
+              key={d.code}
+              onMouseDown={() => select(d.code)}
+              className="flex items-center gap-3 px-4 py-2.5 text-sm cursor-pointer hover:bg-ocean-light"
+            >
+              <span className="w-12 shrink-0 font-bold text-ocean-deep">{d.code}</span>
+              <span className="text-[#4A6580]">{d.country}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
 
 const copy = {
   en: {
@@ -90,6 +216,7 @@ const copy = {
     sentText: 'Thank you. We received your request and will contact you shortly.',
     fullName: 'Full name *',
     phone: 'Phone *',
+    phoneNumber: 'Number',
     date: 'Preferred date *',
     slot: 'Time slot *',
     fullDay: 'Full day',
@@ -135,6 +262,7 @@ const copy = {
     sentText: 'Grazie! Abbiamo ricevuto la tua richiesta e ti contatteremo a breve.',
     fullName: 'Nome e cognome *',
     phone: 'Telefono *',
+    phoneNumber: 'Numero',
     date: 'Data desiderata *',
     slot: 'Fascia oraria *',
     fullDay: 'Giornata intera',
@@ -180,6 +308,7 @@ const copy = {
     sentText: 'Faleminderit. E morëm kërkesën dhe do të të kontaktojmë së shpejti.',
     fullName: 'Emër dhe mbiemër *',
     phone: 'Telefon *',
+    phoneNumber: 'Numri',
     date: 'Data e dëshiruar *',
     slot: 'Orari *',
     fullDay: 'Ditë e plotë',
@@ -225,6 +354,7 @@ const copy = {
     sentText: 'شكرا لك. استلمنا طلبك وسنتواصل معك قريبا.',
     fullName: 'الاسم الكامل *',
     phone: 'الهاتف *',
+    phoneNumber: 'الرقم',
     date: 'التاريخ المفضل *',
     slot: 'الفترة الزمنية *',
     fullDay: 'يوم كامل',
@@ -270,6 +400,7 @@ const copy = {
     sentText: 'Спасибо. Мы получили вашу заявку и скоро свяжемся с вами.',
     fullName: 'Имя и фамилия *',
     phone: 'Телефон *',
+    phoneNumber: 'Номер',
     date: 'Желаемая дата *',
     slot: 'Временной слот *',
     fullDay: 'Полный день',
@@ -315,6 +446,7 @@ const copy = {
     sentText: '谢谢。我们已收到你的请求，并会尽快联系你。',
     fullName: '姓名 *',
     phone: '电话 *',
+    phoneNumber: '号码',
     date: '首选日期 *',
     slot: '时间段 *',
     fullDay: '全天',
@@ -365,7 +497,7 @@ export default function BookingForm({ tipo = 'generico', lang = 'en' }: BookingF
     const e: FormErrors = {}
     if (!data.nome.trim()) e.nome = t.required
     if (!data.email.trim()) e.email = t.required
-    if (!data.telefono.trim()) e.telefono = t.required
+    if (!data.phoneNumber.trim()) e.telefono = t.required
     if (!data.data) e.data = t.dateRequired
     if (tipo !== 'esperienza' && !data.fascia) e.fascia = t.slotRequired
     if (tipo === 'esperienza' && !data.esperienzaPesca) e.esperienzaPesca = t.experienceRequired
@@ -382,7 +514,7 @@ export default function BookingForm({ tipo = 'generico', lang = 'en' }: BookingF
     await fetch('/api/public-bookings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tipo, ...data }),
+      body: JSON.stringify({ tipo, ...data, telefono: `${data.phonePrefix}${data.phoneNumber}` }),
     })
     setSubmitted(true)
   }
@@ -398,7 +530,11 @@ export default function BookingForm({ tipo = 'generico', lang = 'en' }: BookingF
         ? Number(value)
         : value
     setData((prev) => ({ ...prev, [name]: newValue }))
-    if (name in errors) setErrors((prev) => ({ ...prev, [name]: undefined }))
+    if (name === 'phoneNumber') {
+      setErrors((prev) => ({ ...prev, telefono: undefined }))
+    } else if (name in errors) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }))
+    }
   }
 
   const today = new Date().toISOString().split('T')[0]
@@ -431,8 +567,21 @@ export default function BookingForm({ tipo = 'generico', lang = 'en' }: BookingF
         </div>
         <div>
           <label className={labelClass}>{t.phone}</label>
-          <input type="tel" name="telefono" value={data.telefono} onChange={handleChange}
-            placeholder="+39 333 123 4567" className={ic('telefono')} />
+          <div className="flex gap-2">
+            <PhonePrefixCombobox
+              value={data.phonePrefix}
+              onChange={(v) => setData((prev) => ({ ...prev, phonePrefix: v }))}
+              error={!!errors.telefono}
+            />
+            <input
+              type="tel"
+              name="phoneNumber"
+              value={data.phoneNumber}
+              onChange={handleChange}
+              placeholder="333 123 4567"
+              className={`${errors.telefono ? errorInputClass : validInputClass} flex-1`}
+            />
+          </div>
           {errors.telefono && <p className="text-red-500 text-xs mt-1.5">{errors.telefono}</p>}
         </div>
       </div>

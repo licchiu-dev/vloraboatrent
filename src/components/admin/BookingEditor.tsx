@@ -47,12 +47,27 @@ export default function BookingEditor({ partnerMode = false }: { partnerMode?: b
 
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
+  const [availabilityMap, setAvailabilityMap] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     fetch('/api/products').then((r) => r.json()).then(setProducts)
     fetch('/api/fleet').then((r) => r.ok ? r.json() : []).then(setFleetAssets)
     if (!partnerMode) fetch('/api/partners').then((r) => r.ok ? r.json() : []).then(setPartners)
   }, [partnerMode])
+
+  useEffect(() => {
+    if (!form.date) { setAvailabilityMap({}); return }
+    fetch(`/api/fleet?from=${form.date}&to=${form.date}`)
+      .then((r) => r.ok ? r.json() : [])
+      .then((assets: Array<{ id: string; assignments: Array<{ booking: { status: string } }> }>) => {
+        const map: Record<string, boolean> = {}
+        for (const a of assets) {
+          map[a.id] = a.assignments.some((x) => x.booking.status !== 'CANCELLED')
+        }
+        setAvailabilityMap(map)
+      })
+      .catch(() => {})
+  }, [form.date])
 
   // Auto-fill unit price when product changes
   function changeProduct(idx: number, productId: string) {
@@ -120,7 +135,12 @@ export default function BookingEditor({ partnerMode = false }: { partnerMode?: b
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bookingId: booking.id, fleetAssetIds }),
       })
-      if (!r2.ok) { const e = await r2.json(); setMessage(e.error ?? 'Booking saved, fleet assignment failed.'); return }
+      if (!r2.ok) {
+        // Booking created but boat already occupied: go to detail so user can reassign without creating duplicates
+        router.push(`${partnerMode ? '/partner' : '/admin'}/prenotazioni/${booking.id}?boat_conflict=1`)
+        router.refresh()
+        return
+      }
     }
     router.push(partnerMode ? '/partner/prenotazioni' : '/admin/prenotazioni')
     router.refresh()
@@ -262,18 +282,37 @@ export default function BookingEditor({ partnerMode = false }: { partnerMode?: b
       {/* Fleet */}
       <div>
         <p className="mb-1 font-black text-ocean-deep">Barca assegnata</p>
-        <p className="mb-3 text-sm text-[#4A6580]">Seleziona le barche per inserire questo booking nel calendario flotta.</p>
+        <p className="mb-3 text-sm text-[#4A6580]">
+          Seleziona le barche per inserire questo booking nel calendario flotta.
+          {form.date && <span className="ml-1 text-xs text-ocean-mid">(disponibilità per la data selezionata)</span>}
+        </p>
         <div className="flex flex-wrap gap-2">
-          {fleetAssets.map((a) => (
-            <label key={a.id} className="inline-flex items-center gap-2 rounded-full border border-[#D0E8F7] px-3 py-2 text-sm cursor-pointer hover:bg-ocean-light">
-              <input
-                type="checkbox"
-                checked={fleetAssetIds.includes(a.id)}
-                onChange={() => setFleetAssetIds((cur) => cur.includes(a.id) ? cur.filter((x) => x !== a.id) : [...cur, a.id])}
-              />
-              {a.name} · {a.category}
-            </label>
-          ))}
+          {fleetAssets.map((a) => {
+            const occupied = availabilityMap[a.id] === true
+            const checked = fleetAssetIds.includes(a.id)
+            return (
+              <label
+                key={a.id}
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm cursor-pointer transition-colors ${
+                  occupied
+                    ? 'border-red-200 bg-red-50 text-red-700'
+                    : 'border-[#D0E8F7] hover:bg-ocean-light text-ocean-deep'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => setFleetAssetIds((cur) => cur.includes(a.id) ? cur.filter((x) => x !== a.id) : [...cur, a.id])}
+                />
+                {a.name} · {a.category}
+                {form.date && (
+                  <span className={`ml-1 text-xs font-bold ${occupied ? 'text-red-500' : 'text-green-600'}`}>
+                    {occupied ? 'Occupato' : 'Libero'}
+                  </span>
+                )}
+              </label>
+            )
+          })}
           {fleetAssets.length === 0 && <p className="text-sm text-[#4A6580]">Nessuna barca disponibile.</p>}
         </div>
       </div>

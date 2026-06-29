@@ -659,7 +659,6 @@ export default function BookingForm({ tipo = 'generico', lang = 'en' }: BookingF
             {[
               { name: 'adulti', label: t.adults, min: 1 },
               { name: 'bambini', label: t.children, min: 0 },
-              { name: 'snorkeling', label: t.snorkeling, min: 0 },
             ].map((f) => (
               <div key={f.name}>
                 <label className={labelClass}>{f.label}</label>
@@ -673,7 +672,8 @@ export default function BookingForm({ tipo = 'generico', lang = 'en' }: BookingF
             ))}
           </div>
 
-          <div>
+          {tipo === 'generico' && (
+            <div>
             <label className={labelClass}>
               {t.sunset}
               <span className="ml-2 text-[#8AACCC] font-normal text-xs">
@@ -685,7 +685,8 @@ export default function BookingForm({ tipo = 'generico', lang = 'en' }: BookingF
               onChange={handleChange} min={0}
               className={`${validInputClass} max-w-[10rem]`}
             />
-          </div>
+            </div>
+          )}
         </div>
       )}
 

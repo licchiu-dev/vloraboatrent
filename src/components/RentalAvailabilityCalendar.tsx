@@ -21,6 +21,9 @@ type Selection = {
 
 const labels: Record<Lang, {
   title: string
+  chooseDate: string
+  previousWeek: string
+  nextWeek: string
   loading: string
   noFleet: string
   date: string
@@ -31,6 +34,9 @@ const labels: Record<Lang, {
 }> = {
   en: {
     title: 'Choose boat and date',
+    chooseDate: 'Choose a date',
+    previousWeek: 'Previous week',
+    nextWeek: 'Next week',
     loading: 'Loading availability...',
     noFleet: 'No boats available online right now.',
     date: 'Date',
@@ -41,6 +47,9 @@ const labels: Record<Lang, {
   },
   it: {
     title: 'Scegli barca e data',
+    chooseDate: 'Scegli una data',
+    previousWeek: 'Settimana precedente',
+    nextWeek: 'Settimana successiva',
     loading: 'Caricamento disponibilita...',
     noFleet: 'Nessuna barca disponibile online al momento.',
     date: 'Data',
@@ -51,6 +60,9 @@ const labels: Record<Lang, {
   },
   sq: {
     title: 'Zgjidh barken dhe daten',
+    chooseDate: 'Zgjidh daten',
+    previousWeek: 'Java e kaluar',
+    nextWeek: 'Java tjeter',
     loading: 'Duke ngarkuar disponueshmerine...',
     noFleet: 'Nuk ka barka te disponueshme online tani.',
     date: 'Data',
@@ -61,6 +73,9 @@ const labels: Record<Lang, {
   },
   ar: {
     title: 'اختر القارب والتاريخ',
+    chooseDate: 'اختر التاريخ',
+    previousWeek: 'الأسبوع السابق',
+    nextWeek: 'الأسبوع التالي',
     loading: 'جاري تحميل التوفر...',
     noFleet: 'لا توجد قوارب متاحة الآن.',
     date: 'التاريخ',
@@ -71,6 +86,9 @@ const labels: Record<Lang, {
   },
   ru: {
     title: 'Выберите лодку и дату',
+    chooseDate: 'Выберите дату',
+    previousWeek: 'Предыдущая неделя',
+    nextWeek: 'Следующая неделя',
     loading: 'Загрузка доступности...',
     noFleet: 'Сейчас нет лодок, доступных онлайн.',
     date: 'Дата',
@@ -81,6 +99,9 @@ const labels: Record<Lang, {
   },
   zh: {
     title: '选择船和日期',
+    chooseDate: '选择日期',
+    previousWeek: '上一周',
+    nextWeek: '下一周',
     loading: '正在加载可订情况...',
     noFleet: '当前没有可在线预订的船。',
     date: '日期',
@@ -98,23 +119,24 @@ function isoDate(date: Date) {
   return `${year}-${month}-${day}`
 }
 
-function addMonths(date: Date, amount: number) {
-  return new Date(date.getFullYear(), date.getMonth() + amount, 1)
+function parseDate(value: string) {
+  const [year, month, day] = value.split('-').map(Number)
+  return new Date(year, month - 1, day)
 }
 
-function monthDays(monthStart: Date, minDate?: string) {
-  const days: Date[] = []
-  const cursor = new Date(monthStart)
-  while (cursor.getMonth() === monthStart.getMonth()) {
-    if (!minDate || isoDate(cursor) >= minDate) days.push(new Date(cursor))
-    cursor.setDate(cursor.getDate() + 1)
-  }
-  return days
+function addDays(date: Date, amount: number) {
+  const next = new Date(date)
+  next.setDate(next.getDate() + amount)
+  return next
 }
 
-function monthLabel(date: Date, lang: Lang) {
-  const locale = lang === 'it' ? 'it-IT' : lang === 'sq' ? 'sq-AL' : lang === 'ru' ? 'ru-RU' : lang === 'zh' ? 'zh-CN' : lang === 'ar' ? 'ar' : 'en-GB'
-  return date.toLocaleDateString(locale, { month: 'long', year: 'numeric' })
+function weekDays(startDate: string) {
+  const start = parseDate(startDate)
+  return Array.from({ length: 7 }, (_, index) => addDays(start, index))
+}
+
+function localeFor(lang: Lang) {
+  return lang === 'it' ? 'it-IT' : lang === 'sq' ? 'sq-AL' : lang === 'ru' ? 'ru-RU' : lang === 'zh' ? 'zh-CN' : lang === 'ar' ? 'ar' : 'en-GB'
 }
 
 function fullDayBlocked(asset: Asset, date: string) {
@@ -138,9 +160,15 @@ export default function RentalAvailabilityCalendar({
   const [loading, setLoading] = useState(true)
   const today = useMemo(() => new Date(), [])
   const todayKey = isoDate(today)
-  const months = useMemo(() => [new Date(today.getFullYear(), today.getMonth(), 1), addMonths(today, 1)], [today])
-  const from = isoDate(months[0])
-  const to = isoDate(new Date(months[1].getFullYear(), months[1].getMonth() + 1, 0))
+  const [weekStart, setWeekStart] = useState(todayKey)
+  const days = useMemo(() => weekDays(weekStart), [weekStart])
+  const from = isoDate(days[0])
+  const to = isoDate(days[days.length - 1])
+
+  function moveWeek(amount: number) {
+    const next = isoDate(addDays(parseDate(weekStart), amount * 7))
+    setWeekStart(next < todayKey ? todayKey : next)
+  }
 
   useEffect(() => {
     let active = true
@@ -175,67 +203,85 @@ export default function RentalAvailabilityCalendar({
       ) : assets.length === 0 ? (
         <p className="px-4 py-8 text-center text-sm font-bold text-[#4A6580]">{t.noFleet}</p>
       ) : (
-        <div className="space-y-5 p-4">
-          {months.map((month) => (
-            <div key={month.toISOString()} className="overflow-x-auto">
-              <h3 className="mb-3 text-lg font-black capitalize text-ocean-deep">{monthLabel(month, lang)}</h3>
-              <table className="w-full min-w-[720px] border-separate border-spacing-0 text-sm">
-                <thead>
-                  <tr>
-                    <th className="sticky left-0 z-10 w-28 rounded-tl-xl bg-ocean-light p-2 text-left text-xs font-black uppercase text-[#4A6580]">
-                      {t.date}
-                    </th>
-                    {assets.map((asset) => (
-                      <th key={asset.id} className="min-w-44 bg-ocean-light p-2 text-left text-xs font-black uppercase text-[#4A6580] last:rounded-tr-xl">
-                        {asset.name}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {monthDays(month, month.getMonth() === today.getMonth() && month.getFullYear() === today.getFullYear() ? todayKey : undefined).map((day) => {
-                    const date = isoDate(day)
-                    const past = date < todayKey
-                    return (
-                      <tr key={date} className="align-top">
-                        <th className="sticky left-0 z-10 border-t border-[#E8F3FA] bg-white p-2 text-left">
-                          <span className="block font-black text-ocean-deep">{day.toLocaleDateString('en-GB', { day: '2-digit' })}</span>
-                          <span className="text-xs font-bold text-[#4A6580]">{day.toLocaleDateString('en-GB', { weekday: 'short' })}</span>
-                        </th>
-                        {assets.map((asset) => (
-                          <td key={asset.id} className="border-t border-[#E8F3FA] p-2">
-                            {(() => {
-                              const selected = value?.assetId === asset.id && value.date === date
-                              const blocked = past || fullDayBlocked(asset, date)
-                              return (
-                                <button
-                                  type="button"
-                                  disabled={blocked}
-                                  onClick={() => onSelect({ assetId: asset.id, date, fascia: 'Giornata intera' })}
-                                  className={`min-h-16 w-full rounded-lg border px-3 py-2 text-left transition focus:outline-none focus:ring-2 focus:ring-sand disabled:cursor-not-allowed ${
-                                    selected
-                                      ? 'border-emerald-600 bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
-                                      : blocked
-                                        ? 'border-red-200 bg-red-500/90 text-white opacity-80'
-                                        : 'border-[#A8D7EC] bg-white text-ocean-deep hover:border-ocean-bright hover:bg-ocean-light'
-                                  }`}
-                                >
-                                  <span className="block text-xs font-black leading-tight">{t.full}</span>
-                                  <span className={`mt-1 block text-sm font-bold ${selected || blocked ? 'text-white/85' : 'text-[#4A6580]'}`}>
-                                    EUR {asset.prices.fullDay}
-                                  </span>
-                                </button>
-                              )
-                            })()}
-                          </td>
-                        ))}
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+        <div className="space-y-4 p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <label className="text-sm font-black text-ocean-deep">
+              {t.chooseDate}
+              <input
+                type="date"
+                min={todayKey}
+                value={weekStart}
+                onChange={(event) => setWeekStart(event.target.value < todayKey ? todayKey : event.target.value)}
+                className="mt-1.5 block rounded-lg border-2 border-[#D0E8F7] bg-white px-3 py-2 text-sm font-bold text-[#0A1628] outline-none focus:border-ocean-bright focus:ring-4 focus:ring-ocean-bright/10"
+              />
+            </label>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => moveWeek(-1)} disabled={weekStart <= todayKey} className="rounded-full border border-[#D0E8F7] px-4 py-2 text-sm font-black text-ocean-deep disabled:opacity-40">
+                {t.previousWeek}
+              </button>
+              <button type="button" onClick={() => moveWeek(1)} className="rounded-full bg-ocean-deep px-4 py-2 text-sm font-black text-white">
+                {t.nextWeek}
+              </button>
             </div>
-          ))}
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px] border-separate border-spacing-0 text-sm">
+              <thead>
+                <tr>
+                  <th className="sticky left-0 z-10 w-28 rounded-tl-xl bg-ocean-light p-2 text-left text-xs font-black uppercase text-[#4A6580]">
+                    {t.date}
+                  </th>
+                  {assets.map((asset) => (
+                    <th key={asset.id} className="min-w-44 bg-ocean-light p-2 text-left text-xs font-black uppercase text-[#4A6580] last:rounded-tr-xl">
+                      {asset.name}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {days.map((day) => {
+                  const date = isoDate(day)
+                  const past = date < todayKey
+                  return (
+                    <tr key={date} className="align-top">
+                      <th className="sticky left-0 z-10 border-t border-[#E8F3FA] bg-white p-2 text-left">
+                        <span className="block font-black text-ocean-deep">{day.toLocaleDateString(localeFor(lang), { day: '2-digit', month: 'short' })}</span>
+                        <span className="text-xs font-bold text-[#4A6580]">{day.toLocaleDateString(localeFor(lang), { weekday: 'short' })}</span>
+                      </th>
+                      {assets.map((asset) => (
+                        <td key={asset.id} className="border-t border-[#E8F3FA] p-2">
+                          {(() => {
+                            const selected = value?.assetId === asset.id && value.date === date
+                            const blocked = past || fullDayBlocked(asset, date)
+                            return (
+                              <button
+                                type="button"
+                                disabled={blocked}
+                                onClick={() => onSelect({ assetId: asset.id, date, fascia: 'Giornata intera' })}
+                                className={`min-h-16 w-full rounded-lg border px-3 py-2 text-left transition focus:outline-none focus:ring-2 focus:ring-sand disabled:cursor-not-allowed ${
+                                  selected
+                                    ? 'border-emerald-600 bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
+                                    : blocked
+                                      ? 'border-red-200 bg-red-500/90 text-white opacity-80'
+                                      : 'border-[#A8D7EC] bg-white text-ocean-deep hover:border-ocean-bright hover:bg-ocean-light'
+                                }`}
+                              >
+                                <span className="block text-xs font-black leading-tight">{t.full}</span>
+                                <span className={`mt-1 block text-sm font-bold ${selected || blocked ? 'text-white/85' : 'text-[#4A6580]'}`}>
+                                  EUR {asset.prices.fullDay}
+                                </span>
+                              </button>
+                            )
+                          })()}
+                        </td>
+                      ))}
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

@@ -165,6 +165,7 @@ export default function BookingsTable({ rows }: { rows: BookingRow[] }) {
             <option value="">Choose status…</option>
             <option value="PENDING">Pending</option>
             <option value="CONFIRMED">Confirmed</option>
+            <option value="COMPLETED">Completed</option>
             <option value="CANCELLED">Cancelled</option>
           </select>
           <button

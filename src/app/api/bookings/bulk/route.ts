@@ -30,20 +30,23 @@ export async function PATCH(request: Request) {
 
   if (ids.length === 0) return Response.json({ error: 'Select at least one booking.' }, { status: 400 })
   if (!(status in BookingStatus)) return Response.json({ error: 'Invalid status.' }, { status: 400 })
-  if (status === BookingStatus.COMPLETED) {
-    return Response.json(
-      { error: 'Completing bookings requires fuel amount. Open each booking and complete it individually.' },
-      { status: 400 },
-    )
-  }
 
   const affected = await prisma.booking.findMany({
     where: { id: { in: ids } },
-    select: { id: true, partnerId: true },
+    select: { id: true, partnerId: true, fuelAmount: true },
   })
   const affectedIds = affected.map((booking) => booking.id)
 
   if (affectedIds.length === 0) return Response.json({ error: 'No matching bookings found.' }, { status: 404 })
+  if (status === BookingStatus.COMPLETED) {
+    const missingFuel = affected.filter((booking) => booking.fuelAmount == null)
+    if (missingFuel.length > 0) {
+      return Response.json(
+        { error: `${missingFuel.length} selected booking(s) are missing fuel amount. Open them individually before marking completed.` },
+        { status: 400 },
+      )
+    }
+  }
 
   await prisma.booking.updateMany({
     where: { id: { in: affectedIds } },

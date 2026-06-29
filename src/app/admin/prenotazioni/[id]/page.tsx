@@ -75,6 +75,7 @@ export default async function BookingDetail({
               initialStatus={booking.status}
               initialPaymentMethod={booking.paymentMethod}
               initialPaymentInstrument={booking.paymentInstrument ?? null}
+              initialFuelAmount={booking.fuelAmount}
             />
             <AssetAssignmentEditor
               bookingId={booking.id}

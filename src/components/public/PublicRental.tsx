@@ -383,9 +383,9 @@ export default function PublicRental({ lang, sitePrices }: { lang: Lang; sitePri
             <div className="bg-white rounded-3xl p-8 border-2 border-[#D0E8F7]">
               <h3 className="font-black text-xl text-ocean-deep mb-6 flex items-center gap-3"><span className="text-2xl">➕</span> {t.extrasTitle}</h3>
               <ul className="space-y-5">
-                {t.extras.map(([name, description, price]) => (
+                {t.extras.map(([name, description]) => (
                   <li key={name} className="flex flex-col gap-1">
-                    <div className="flex items-baseline gap-2"><span className="font-bold text-ocean-deep">{name}</span><span className="text-[#4A6580] text-sm">— {price}</span></div>
+                    <div className="flex items-baseline gap-2"><span className="font-bold text-ocean-deep">{name}</span></div>
                     <span className="text-[#4A6580] text-sm">{description}</span>
                   </li>
                 ))}

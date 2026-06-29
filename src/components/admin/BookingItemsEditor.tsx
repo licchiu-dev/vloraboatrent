@@ -43,7 +43,7 @@ export default function BookingItemsEditor({
       name: item.product.name,
       basePrice: item.product.basePrice,
       quantity: item.quantity,
-      unitPrice: item.product.basePrice, // start from catalog price
+      unitPrice: item.unitPrice,
     }))
   )
   const [saving, setSaving] = useState(false)

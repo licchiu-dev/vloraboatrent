@@ -63,6 +63,7 @@ export default async function PartnerBookingDetail({
               initialStatus={booking.status}
               initialPaymentMethod={booking.paymentMethod}
               initialPaymentInstrument={booking.paymentInstrument ?? null}
+              initialFuelAmount={booking.fuelAmount}
             />
           </Card>
           <Card>

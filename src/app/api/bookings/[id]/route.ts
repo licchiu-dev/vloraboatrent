@@ -69,9 +69,17 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   // Partners can only edit bookings that belong to them
   if (isPartner) {
-    const booking = await prisma.booking.findUnique({ where: { id }, select: { partnerId: true } })
+    const booking = await prisma.booking.findUnique({ where: { id }, select: { partnerId: true, status: true, fuelAmount: true } })
     if (!booking || booking.partnerId !== guard.session.user.partnerId) {
       return Response.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    if (body.status === 'COMPLETED') {
+      const nextFuelAmount = body.fuelAmount !== undefined
+        ? (body.fuelAmount === '' || body.fuelAmount === null ? null : Number(body.fuelAmount))
+        : booking.fuelAmount
+      if (booking.status !== 'COMPLETED' && (nextFuelAmount == null || Number.isNaN(nextFuelAmount) || nextFuelAmount < 0)) {
+        return Response.json({ error: 'Fuel amount is required before completing the booking.' }, { status: 400 })
+      }
     }
     const customer = customerData(body)
     const updated = await prisma.$transaction(async (tx) => {
@@ -104,6 +112,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           halfDayPeriod: body.halfDayPeriod !== undefined ? (body.halfDayPeriod || null) : undefined,
           notes: body.notes !== undefined ? (body.notes || null) : undefined,
           status: body.status,
+          fuelAmount: body.fuelAmount !== undefined ? (body.fuelAmount === '' || body.fuelAmount === null ? null : Number(body.fuelAmount)) : undefined,
         },
       })
     })
@@ -115,6 +124,19 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   // --- SUPERADMIN / ADMIN below ---
   const customer = customerData(body)
   if (customer) await updateBookingCustomer(id, customer)
+
+  if (body.status === 'COMPLETED') {
+    const current = await prisma.booking.findUnique({
+      where: { id },
+      select: { status: true, fuelAmount: true },
+    })
+    const nextFuelAmount = body.fuelAmount !== undefined
+      ? (body.fuelAmount === '' || body.fuelAmount === null ? null : Number(body.fuelAmount))
+      : current?.fuelAmount
+    if (current?.status !== 'COMPLETED' && (nextFuelAmount == null || Number.isNaN(nextFuelAmount) || nextFuelAmount < 0)) {
+      return Response.json({ error: 'Fuel amount is required before completing the booking.' }, { status: 400 })
+    }
+  }
 
   if (Array.isArray(body.items)) {
     // Desired state: full list of items. Items with `id` are kept/updated;

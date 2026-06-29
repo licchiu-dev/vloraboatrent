@@ -15,31 +15,50 @@ export async function syncRentalItemsFromFleet(bookingId: string) {
   const hasRentalItems = booking.items.some((item) => item.product.category === 'NOLEGGIO')
   if (!hasRentalItems) return booking
 
-  const rentalCounts = new Map<string, { product: typeof booking.fleetAssignments[number]['fleetAsset']['pricingProduct']; quantity: number }>()
-  for (const assignment of booking.fleetAssignments) {
-    const product = assignment.fleetAsset.pricingProduct
+  const existingRentalUnits = booking.items
+    .filter((item) => item.product.category === 'NOLEGGIO')
+    .flatMap((item) => Array.from({ length: item.quantity }, () => ({
+      product: item.product,
+      unitPrice: item.unitPrice,
+    })))
+
+  const rentalCounts = new Map<string, {
+    product: typeof booking.fleetAssignments[number]['fleetAsset']['pricingProduct'];
+    quantity: number;
+    unitPrices: number[];
+  }>()
+  for (const [index, assignment] of booking.fleetAssignments.entries()) {
+    const fallbackProduct = assignment.fleetAsset.pricingProduct
+    const existingUnit = existingRentalUnits[index]
+    const product = existingUnit?.product ?? fallbackProduct
+    const unitPrice = existingUnit?.unitPrice ?? fallbackProduct.basePrice
     const current = rentalCounts.get(product.id)
-    rentalCounts.set(product.id, { product, quantity: (current?.quantity ?? 0) + 1 })
+    rentalCounts.set(product.id, {
+      product,
+      quantity: (current?.quantity ?? 0) + 1,
+      unitPrices: [...(current?.unitPrices ?? []), unitPrice],
+    })
   }
 
   if (rentalCounts.size === 0) return booking
 
   const retainedItems = booking.items.filter((item) => item.product.category !== 'NOLEGGIO')
-  const rentalLines = [...rentalCounts.values()].map(({ product, quantity }) => {
-    const publicTotal = product.basePrice * quantity
-    const partnerUnit = booking.partner ? calcPartnerPrice(product, booking.partner) : product.basePrice
+  const rentalLines = [...rentalCounts.values()].map(({ product, quantity, unitPrices }) => {
+    const publicTotal = unitPrices.reduce((sum, unitPrice) => sum + unitPrice, 0)
+    const publicUnit = quantity > 0 ? roundMoney(publicTotal / quantity) : product.basePrice
+    const partnerUnit = booking.partner ? calcPartnerPrice(product, booking.partner) : publicUnit
     return {
       product,
       quantity,
-      unitPrice: partnerUnit,
-      total: roundMoney(partnerUnit * quantity),
+      unitPrice: publicUnit,
+      total: roundMoney(publicUnit * quantity),
       publicTotal,
       partnerTotal: partnerUnit * quantity,
-      commission: booking.partner ? calcCommission(product, booking.partner, quantity) : 0,
+      commission: booking.partner ? roundMoney(publicTotal - partnerUnit * quantity) : 0,
     }
   })
 
-  const retainedPublic = retainedItems.reduce((sum, item) => sum + item.product.basePrice * item.quantity, 0)
+  const retainedPublic = retainedItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
   const retainedPartner = retainedItems.reduce((sum, item) => sum + item.total, 0)
   const retainedCommission = booking.partner
     ? retainedItems.reduce((sum, item) => sum + calcCommission(item.product, booking.partner!, item.quantity), 0)

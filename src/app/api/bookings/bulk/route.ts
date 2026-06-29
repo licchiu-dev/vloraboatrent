@@ -38,19 +38,10 @@ export async function PATCH(request: Request) {
   const affectedIds = affected.map((booking) => booking.id)
 
   if (affectedIds.length === 0) return Response.json({ error: 'No matching bookings found.' }, { status: 404 })
-  if (status === BookingStatus.COMPLETED) {
-    const missingFuel = affected.filter((booking) => booking.fuelAmount == null)
-    if (missingFuel.length > 0) {
-      return Response.json(
-        { error: `${missingFuel.length} selected booking(s) are missing fuel amount. Open them individually before marking completed.` },
-        { status: 400 },
-      )
-    }
-  }
 
   await prisma.booking.updateMany({
     where: { id: { in: affectedIds } },
-    data: { status },
+    data: status === BookingStatus.COMPLETED ? { status, fuelAmount: 0 } : { status },
   })
 
   const partnerIds = [...new Set(affected.flatMap((booking) => (booking.partnerId ? [booking.partnerId] : [])))]

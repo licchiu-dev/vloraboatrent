@@ -112,6 +112,9 @@ export default function BookingsTable({ rows }: { rows: BookingRow[] }) {
 
   async function applyBulkStatus() {
     if (!bulkStatus || selectedIds.length === 0) return
+    if (bulkStatus === 'COMPLETED' && !window.confirm(`Stai completando ${selectedIds.length} booking. La benzina pagata verra impostata a EUR 0 per tutti i selezionati. Continuare?`)) {
+      return
+    }
     setBulkSaving(true)
     setBulkMessage('')
     const response = await fetch('/api/bookings/bulk', {

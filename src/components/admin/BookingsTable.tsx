@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Badge } from '@/components/admin/Ui'
 
 export type BookingRow = {
@@ -45,6 +46,7 @@ const inputClass =
   'rounded-lg border border-[#D0E8F7] px-3 py-2 text-sm outline-none focus:border-ocean-mid bg-white'
 
 export default function BookingsTable({ rows }: { rows: BookingRow[] }) {
+  const router = useRouter()
   const [customer, setCustomer] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
@@ -52,6 +54,10 @@ export default function BookingsTable({ rows }: { rows: BookingRow[] }) {
   const [service, setService] = useState('')
   const [partner, setPartner] = useState('')
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({ key: 'date', dir: 'desc' })
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [bulkStatus, setBulkStatus] = useState<BookingRow['status'] | ''>('')
+  const [bulkSaving, setBulkSaving] = useState(false)
+  const [bulkMessage, setBulkMessage] = useState('')
 
   function toggleSort(col: SortKey) {
     setSort((prev) =>
@@ -87,6 +93,43 @@ export default function BookingsTable({ rows }: { rows: BookingRow[] }) {
   }
 
   const hasFilter = customer || dateFrom || dateTo || status !== 'ACTIVE' || service || partner
+  const filteredIds = filtered.map((row) => row.id)
+  const selectedVisibleCount = filteredIds.filter((id) => selectedIds.includes(id)).length
+  const allVisibleSelected = filteredIds.length > 0 && selectedVisibleCount === filteredIds.length
+
+  function toggleRow(id: string) {
+    setSelectedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id])
+    setBulkMessage('')
+  }
+
+  function toggleVisibleRows() {
+    setSelectedIds((current) => {
+      if (allVisibleSelected) return current.filter((id) => !filteredIds.includes(id))
+      return [...new Set([...current, ...filteredIds])]
+    })
+    setBulkMessage('')
+  }
+
+  async function applyBulkStatus() {
+    if (!bulkStatus || selectedIds.length === 0) return
+    setBulkSaving(true)
+    setBulkMessage('')
+    const response = await fetch('/api/bookings/bulk', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: selectedIds, status: bulkStatus }),
+    })
+    const result = await response.json().catch(() => ({}))
+    setBulkSaving(false)
+    if (!response.ok) {
+      setBulkMessage(result.error ?? 'Bulk update failed.')
+      return
+    }
+    setSelectedIds([])
+    setBulkStatus('')
+    setBulkMessage(`Updated ${result.count ?? selectedIds.length} bookings.`)
+    router.refresh()
+  }
 
   return (
     <div className="space-y-4">
@@ -115,10 +158,40 @@ export default function BookingsTable({ rows }: { rows: BookingRow[] }) {
         {filtered.length} of {rows.length} bookings
       </p>
 
+      <div className="flex flex-col gap-3 rounded-lg border border-[#D0E8F7] bg-ocean-light/60 p-3 md:flex-row md:items-center md:justify-between">
+        <p className="text-sm font-bold text-ocean-deep">{selectedIds.length} selected</p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <select value={bulkStatus} onChange={(e) => setBulkStatus(e.target.value as BookingRow['status'] | '')} className={inputClass}>
+            <option value="">Choose status…</option>
+            <option value="PENDING">Pending</option>
+            <option value="CONFIRMED">Confirmed</option>
+            <option value="CANCELLED">Cancelled</option>
+          </select>
+          <button
+            type="button"
+            onClick={applyBulkStatus}
+            disabled={bulkSaving || selectedIds.length === 0 || !bulkStatus}
+            className="rounded-lg bg-ocean-deep px-4 py-2 text-sm font-black text-white disabled:opacity-50"
+          >
+            {bulkSaving ? 'Updating…' : 'Update selected'}
+          </button>
+        </div>
+      </div>
+      {bulkMessage && <p className="text-sm font-bold text-ocean-mid">{bulkMessage}</p>}
+
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[920px] text-left text-sm">
+        <table className="w-full min-w-[980px] text-left text-sm">
           <thead>
             <tr>
+              <th className="pb-3 pr-4">
+                <input
+                  type="checkbox"
+                  checked={allVisibleSelected}
+                  onChange={toggleVisibleRows}
+                  aria-label="Select visible bookings"
+                  className="h-4 w-4 accent-ocean-mid"
+                />
+              </th>
               <SortableHeader label="Date" col="date" sort={sort} onSort={toggleSort} />
               <SortableHeader label="Customer" col="customerName" sort={sort} onSort={toggleSort} />
               <SortableHeader label="Services" col="services" sort={sort} onSort={toggleSort} />
@@ -133,6 +206,15 @@ export default function BookingsTable({ rows }: { rows: BookingRow[] }) {
           <tbody className="divide-y divide-[#D0E8F7]">
             {filtered.map((row) => (
               <tr key={row.id} className="hover:bg-ocean-light/30">
+                <td className="py-4 pr-4">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(row.id)}
+                    onChange={() => toggleRow(row.id)}
+                    aria-label={`Select booking ${row.customerName}`}
+                    className="h-4 w-4 accent-ocean-mid"
+                  />
+                </td>
                 <td className="py-4 pr-4 whitespace-nowrap">
                   {new Date(row.date + 'T12:00:00').toLocaleDateString('en-GB')}
                 </td>
@@ -166,7 +248,7 @@ export default function BookingsTable({ rows }: { rows: BookingRow[] }) {
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={9} className="py-12 text-center text-[#4A6580]">
+                <td colSpan={10} className="py-12 text-center text-[#4A6580]">
                   No bookings match the current filters.
                 </td>
               </tr>

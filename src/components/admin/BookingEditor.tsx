@@ -33,7 +33,7 @@ export default function BookingEditor({ partnerMode = false }: { partnerMode?: b
   const [items, setItems] = useState<LineItem[]>([{ productId: '', quantity: 1, unitPrice: 0 }])
   const [form, setForm] = useState({
     name: '', email: '', phone: '',
-    date: '', timeSlot: 'GIORNATA_INTERA',
+    date: '', timeSlot: 'GIORNATA_INTERA', halfDayPeriod: '',
     paymentMethod: 'MOLO',
     paymentInstrument: '',
     partnerId: '', discountCode: '',
@@ -113,6 +113,7 @@ export default function BookingEditor({ partnerMode = false }: { partnerMode?: b
         customer: { name: form.name, email: form.email, phone: form.phone },
         date: form.date,
         timeSlot: form.timeSlot,
+        halfDayPeriod: form.timeSlot === 'MEZZA_GIORNATA' ? form.halfDayPeriod || null : null,
         paymentMethod: form.paymentMethod,
         paymentInstrument: form.paymentInstrument || null,
         status: form.status,
@@ -180,6 +181,15 @@ export default function BookingEditor({ partnerMode = false }: { partnerMode?: b
               <option value="MEZZA_GIORNATA">Mezza giornata</option>
             </select>
           </label>
+          {form.timeSlot === 'MEZZA_GIORNATA' && (
+            <label className={labelClass}>Fascia mezza giornata
+              <select value={form.halfDayPeriod} onChange={(e) => setForm({ ...form, halfDayPeriod: e.target.value })} className={inputClass}>
+                <option value="">Non specificata</option>
+                <option value="MATTINA">Mattina</option>
+                <option value="POMERIGGIO">Pomeriggio</option>
+              </select>
+            </label>
+          )}
           {!partnerMode && (
             <label className={labelClass}>Status
               <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className={inputClass}>

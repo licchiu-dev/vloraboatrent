@@ -48,6 +48,7 @@ export default async function PartnerBookingDetail({
             customer={booking.customer}
             date={booking.date}
             timeSlot={booking.timeSlot}
+            halfDayPeriod={booking.halfDayPeriod}
             notes={booking.notes}
             internalNotes={booking.internalNotes}
             createdBy={booking.createdBy}

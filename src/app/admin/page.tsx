@@ -43,7 +43,7 @@ export default async function AdminDashboard() {
       select: {
         date: true,
         totalPublic: true,
-        items: { select: { quantity: true, product: { select: { name: true, basePrice: true } } } },
+        items: { select: { quantity: true, unitPrice: true, product: { select: { name: true } } } },
       },
     }),
     // Payment breakdown: last 6 months — both channel (when) and instrument (how)
@@ -63,11 +63,11 @@ export default async function AdminDashboard() {
     let sum = 0
     for (const booking of seasonBookings) {
       if (booking.date.getMonth() !== monthIndex) continue
-      const grossTotal = booking.items.reduce((s, item) => s + item.product.basePrice * item.quantity, 0)
+      const grossTotal = booking.items.reduce((s, item) => s + item.unitPrice * item.quantity, 0)
       if (grossTotal <= 0) continue
       for (const item of booking.items) {
         if (baseName(item.product.name) !== row) continue
-        sum += bookingRevenue(booking) * ((item.product.basePrice * item.quantity) / grossTotal)
+        sum += bookingRevenue(booking) * ((item.unitPrice * item.quantity) / grossTotal)
       }
     }
     return sum

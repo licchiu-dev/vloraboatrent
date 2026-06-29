@@ -43,6 +43,7 @@ export default async function BookingDetail({
             customer={booking.customer}
             date={booking.date}
             timeSlot={booking.timeSlot}
+            halfDayPeriod={booking.halfDayPeriod}
             notes={booking.notes}
             internalNotes={booking.internalNotes}
             createdBy={booking.createdBy}
@@ -62,6 +63,9 @@ export default async function BookingDetail({
               partnerId={booking.partnerId}
               partnerName={booking.partner?.companyName ?? null}
               discountCode={booking.discountCode}
+              fuelLiters={booking.fuelLiters}
+              fuelAmount={booking.fuelAmount}
+              fuelPaymentInstrument={booking.fuelPaymentInstrument}
             />
           </Card>
 

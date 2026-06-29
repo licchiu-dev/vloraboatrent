@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import RentalAvailabilityCalendar from './RentalAvailabilityCalendar'
 
 export type FormTipo = 'noleggio' | 'esperienza' | 'generico'
 
@@ -16,6 +17,7 @@ interface FormData {
   phoneNumber: string
   data: string
   fascia: string
+  assetId: string
   note: string
   discountCode: string
   adulti: number
@@ -43,6 +45,7 @@ interface FormErrors {
   telefono?: string
   data?: string
   fascia?: string
+  assetId?: string
   esperienzaPesca?: string
 }
 
@@ -53,6 +56,7 @@ const initialData: FormData = {
   phoneNumber: '',
   data: '',
   fascia: '',
+  assetId: '',
   note: '',
   discountCode: '',
   adulti: 1,
@@ -224,8 +228,8 @@ const copy = {
     adults: 'Adults',
     children: 'Children',
     snorkeling: 'Snorkeling kit',
-    sunset: 'Sunset set',
-    sunsetHint: 'placeholder description',
+    sunset: 'Cooler box',
+    sunsetHint: 'for drinks and ice',
     participants: 'Participants',
     fishingStyle: 'Experience *',
     rodFishing: 'Rod fishing',
@@ -270,8 +274,8 @@ const copy = {
     adults: 'Adulti',
     children: 'Bambini',
     snorkeling: 'Kit snorkeling',
-    sunset: 'Set tramonto',
-    sunsetHint: 'descrizione placeholder',
+    sunset: 'Cooler box',
+    sunsetHint: 'per bevande e ghiaccio',
     participants: 'Numero partecipanti',
     fishingStyle: 'Esperienza *',
     rodFishing: 'Pesca con le canne',
@@ -316,8 +320,8 @@ const copy = {
     adults: 'Të rritur',
     children: 'Fëmijë',
     snorkeling: 'Kit snorkeling',
-    sunset: 'Set perëndimi',
-    sunsetHint: 'përshkrim placeholder',
+    sunset: 'Cooler box',
+    sunsetHint: 'per pije dhe akull',
     participants: 'Pjesëmarrës',
     fishingStyle: 'Eksperienca *',
     rodFishing: 'Peshkim me kallama',
@@ -362,8 +366,8 @@ const copy = {
     adults: 'بالغون',
     children: 'أطفال',
     snorkeling: 'عدة سنوركلينغ',
-    sunset: 'طقم الغروب',
-    sunsetHint: 'وصف مؤقت',
+    sunset: 'Cooler box',
+    sunsetHint: 'للمشروبات والثلج',
     participants: 'المشاركون',
     fishingStyle: 'التجربة *',
     rodFishing: 'الصيد بالقصبة',
@@ -408,8 +412,8 @@ const copy = {
     adults: 'Взрослые',
     children: 'Дети',
     snorkeling: 'Комплект для сноркелинга',
-    sunset: 'Закатный сет',
-    sunsetHint: 'временное описание',
+    sunset: 'Cooler box',
+    sunsetHint: 'для напитков и льда',
     participants: 'Участники',
     fishingStyle: 'Формат *',
     rodFishing: 'Рыбалка с удочками',
@@ -454,8 +458,8 @@ const copy = {
     adults: '成人',
     children: '儿童',
     snorkeling: '浮潜套装',
-    sunset: '日落套装',
-    sunsetHint: '占位描述',
+    sunset: 'Cooler box',
+    sunsetHint: '用于饮品和冰块',
     participants: '参与人数',
     fishingStyle: '体验 *',
     rodFishing: '竿钓',
@@ -500,6 +504,7 @@ export default function BookingForm({ tipo = 'generico', lang = 'en' }: BookingF
     if (!data.phoneNumber.trim()) e.telefono = t.required
     if (!data.data) e.data = t.dateRequired
     if (tipo !== 'esperienza' && !data.fascia) e.fascia = t.slotRequired
+    if (tipo === 'noleggio' && !data.assetId) e.assetId = t.slotRequired
     if (tipo === 'esperienza' && !data.esperienzaPesca) e.esperienzaPesca = t.experienceRequired
     return e
   }
@@ -587,22 +592,46 @@ export default function BookingForm({ tipo = 'generico', lang = 'en' }: BookingF
       </div>
 
       {/* Email + Data */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <div className={`grid grid-cols-1 gap-5 ${tipo === 'noleggio' ? '' : 'sm:grid-cols-2'}`}>
         <div>
           <label className={labelClass}>Email *</label>
           <input type="email" name="email" value={data.email} onChange={handleChange}
             placeholder="mario@esempio.com" className={ic('email')} />
           {errors.email && <p className="text-red-500 text-xs mt-1.5">{errors.email}</p>}
         </div>
-        <div>
-          <label className={labelClass}>{t.date}</label>
-          <input type="date" name="data" value={data.data} onChange={handleChange}
-            min={today} className={ic('data')} />
-          {errors.data && <p className="text-red-500 text-xs mt-1.5">{errors.data}</p>}
-        </div>
+        {tipo !== 'noleggio' && (
+          <div>
+            <label className={labelClass}>{t.date}</label>
+            <input type="date" name="data" value={data.data} onChange={handleChange}
+              min={today} className={ic('data')} />
+            {errors.data && <p className="text-red-500 text-xs mt-1.5">{errors.data}</p>}
+          </div>
+        )}
       </div>
 
-      {tipo !== 'esperienza' && (
+      {tipo === 'noleggio' && (
+        <div>
+          <RentalAvailabilityCalendar
+            lang={lang}
+            value={data.assetId && data.data && data.fascia ? { assetId: data.assetId, date: data.data, fascia: 'Giornata intera' } : null}
+            onSelect={(selection) => {
+              setData((prev) => ({
+                ...prev,
+                assetId: selection.assetId,
+                data: selection.date,
+                fascia: 'Giornata intera',
+              }))
+              setErrors((prev) => ({ ...prev, data: undefined, fascia: undefined, assetId: undefined }))
+            }}
+            hasError={!!(errors.data || errors.fascia || errors.assetId)}
+          />
+          {(errors.data || errors.fascia || errors.assetId) && (
+            <p className="text-red-500 text-xs mt-1.5">{errors.data ?? errors.fascia ?? errors.assetId}</p>
+          )}
+        </div>
+      )}
+
+      {tipo !== 'esperienza' && tipo !== 'noleggio' && (
         <div>
           <label className={labelClass}>{t.slot}</label>
           <div className="flex gap-6 flex-wrap">
@@ -631,7 +660,6 @@ export default function BookingForm({ tipo = 'generico', lang = 'en' }: BookingF
               { name: 'adulti', label: t.adults, min: 1 },
               { name: 'bambini', label: t.children, min: 0 },
               { name: 'snorkeling', label: t.snorkeling, min: 0 },
-              { name: 'actionCam', label: 'Action cam', min: 0 },
             ].map((f) => (
               <div key={f.name}>
                 <label className={labelClass}>{f.label}</label>

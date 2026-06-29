@@ -8,6 +8,7 @@ type Props = {
   customer: { name: string; email: string; phone: string }
   date: Date
   timeSlot: string
+  halfDayPeriod?: string | null
   notes: string | null
   internalNotes: string | null
   createdBy: string
@@ -31,6 +32,7 @@ export default function BookingCoreEditor({
   customer,
   date,
   timeSlot,
+  halfDayPeriod,
   notes,
   internalNotes,
   createdBy,
@@ -42,6 +44,7 @@ export default function BookingCoreEditor({
   const [phone, setPhone] = useState(customer.phone)
   const [bookingDate, setBookingDate] = useState(date.toISOString().slice(0, 10))
   const [slot, setSlot] = useState(timeSlot)
+  const [period, setPeriod] = useState(halfDayPeriod ?? '')
   const [customerNotes, setCustomerNotes] = useState(notes ?? '')
   const [internal, setInternal] = useState(internalNotes ?? '')
   const [saving, setSaving] = useState(false)
@@ -59,6 +62,7 @@ export default function BookingCoreEditor({
         customer: { name, email, phone },
         date: bookingDate,
         timeSlot: slot,
+        halfDayPeriod: slot === 'MEZZA_GIORNATA' ? period || null : null,
         notes: customerNotes,
         ...(showInternalNotes ? { internalNotes: internal } : {}),
       }),
@@ -109,6 +113,15 @@ export default function BookingCoreEditor({
               <option value="MEZZA_GIORNATA">Half day</option>
             </select>
           </Field>
+          {slot === 'MEZZA_GIORNATA' && (
+            <Field label="Half day period">
+              <select className={inputClass} value={period} onChange={(e) => setPeriod(e.target.value)}>
+                <option value="">Not specified</option>
+                <option value="MATTINA">Morning</option>
+                <option value="POMERIGGIO">Afternoon</option>
+              </select>
+            </Field>
+          )}
         </div>
         <div className={`mt-3 grid gap-3 ${showInternalNotes ? 'sm:grid-cols-2' : ''}`}>
           <Field label="Customer notes">

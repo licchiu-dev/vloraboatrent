@@ -5,16 +5,20 @@ import { requireRole } from '@/lib/guards'
 import { prisma } from '@/lib/prisma'
 
 const SITE_PRICE_DEFAULTS = [
-  { key: 'gommone', label: 'Gommone (Joker Boat 580)', price: 200 },
-  { key: 'gommone_piccolo', label: 'Gommone piccolo (Joker Boat 500)', price: 150 },
-  { key: 'barca', label: 'Barca (Mingolla Brava 18)', price: 180 },
+  { key: 'gommone', label: 'Gommone grande', price: 200 },
+  { key: 'gommone_piccolo', label: 'Gommone piccolo', price: 180 },
+  { key: 'barca', label: 'Barca', price: 230 },
 ]
 
 export default async function ProductsPage({ searchParams }: { searchParams: Promise<{ partner?: string }> }) {
   await requireRole(['SUPERADMIN'])
   const { partner: selectedPartnerId } = await searchParams
   const [products, partners, sitePriceRows] = await Promise.all([
-    prisma.product.findMany({ include: { partnerPrices: true }, orderBy: { category: 'asc' } }),
+    prisma.product.findMany({
+      where: { active: true, category: { in: ['NOLEGGIO', 'EXTRA'] } },
+      include: { partnerPrices: true },
+      orderBy: { category: 'asc' },
+    }),
     prisma.partner.findMany({ orderBy: { companyName: 'asc' } }),
     prisma.sitePrice.findMany(),
   ])

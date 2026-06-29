@@ -9,6 +9,7 @@ type BookingInput = {
   customer: { name: string; email: string; phone: string }
   date: string
   timeSlot: TimeSlot
+  halfDayPeriod?: string | null
   status: BookingStatus
   paymentMethod?: PaymentMethod
   paymentInstrument?: import('@prisma/client').PaymentInstrument | null
@@ -81,6 +82,7 @@ export async function createBooking(input: BookingInput) {
       customerId: customer.id,
       date: new Date(input.date),
       timeSlot: input.timeSlot,
+      halfDayPeriod: input.halfDayPeriod,
       status: input.status,
       paymentMethod: input.paymentMethod ?? 'MOLO',
       paymentInstrument: input.paymentInstrument ?? null,

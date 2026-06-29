@@ -52,10 +52,10 @@ export function formatEuroPrice(value: number | null | undefined, fallback = '�
 
 export async function getSitePrices(): Promise<Record<string, string>> {
   if (isDemoMode()) {
-    return { gommone: '€200', gommone_piccolo: '€150', barca: '€180' }
+    return { gommone: '€200', gommone_piccolo: '€180', barca: '€230' }
   }
   const rows = await prisma.sitePrice.findMany()
-  const defaults: Record<string, number> = { gommone: 200, gommone_piccolo: 150, barca: 180 }
+  const defaults: Record<string, number> = { gommone: 200, gommone_piccolo: 180, barca: 230 }
   const all = { ...defaults, ...Object.fromEntries(rows.map((r) => [r.key, r.price])) }
   return Object.fromEntries(Object.entries(all).map(([k, v]) => [k, formatEuroPrice(v)]))
 }

@@ -32,6 +32,7 @@ export async function POST(request: Request) {
     customer: body.customer,
     date: body.date,
     timeSlot: body.timeSlot in TimeSlot ? body.timeSlot : 'GIORNATA_INTERA',
+    halfDayPeriod: body.halfDayPeriod ?? null,
     status: isPartner ? BookingStatus.PENDING : body.status ?? BookingStatus.CONFIRMED,
     paymentMethod: body.paymentMethod in PaymentMethod ? body.paymentMethod : PaymentMethod.MOLO,
     paymentInstrument: body.paymentInstrument in PaymentInstrument ? body.paymentInstrument : null,

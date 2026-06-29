@@ -122,7 +122,7 @@ export default function BookingEditor({ partnerMode = false }: { partnerMode?: b
         notes: form.notes,
         internalNotes: form.internalNotes,
         items: validItems.map((l) => ({ productId: l.productId, quantity: l.quantity, unitPrice: l.unitPrice })),
-        totalPublic: totalPublicOverride !== '' ? Number(totalPublicOverride) : autoTotal || undefined,
+        totalPublic: totalPublicOverride !== '' ? Number(totalPublicOverride) : undefined,
         totalPartner: totalPartner !== '' ? Number(totalPartner) : undefined,
         commission: commission !== '' ? Number(commission) : undefined,
       }),

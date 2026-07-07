@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Card, PageHeader } from '@/components/admin/Ui'
+import { Badge, Card, PageHeader } from '@/components/admin/Ui'
 import PartnerEditor from '@/components/admin/PartnerEditor'
 import { requireRole } from '@/lib/guards'
 import { prisma } from '@/lib/prisma'
@@ -84,6 +84,9 @@ export default async function PartnerDetail({ params }: { params: Promise<{ id: 
           <p className="mt-2 text-3xl font-black text-ocean-deep">€{pendingEarnings.toFixed(0)}</p>
         </Card>
       </div>
+      <p className="mt-2 text-xs text-[#4A6580]">
+        These totals only include confirmed or completed bookings. Pending or cancelled bookings are shown in the history below but not counted yet.
+      </p>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_22rem]">
         <div className="flex flex-col gap-6">
@@ -133,23 +136,41 @@ export default async function PartnerDetail({ params }: { params: Promise<{ id: 
               {partner.bookings.length === 0 && (
                 <p className="py-8 text-center text-[#4A6580]">No bookings yet.</p>
               )}
-              {partner.bookings.map((booking) => (
-                <Link
-                  key={booking.id}
-                  href={`/admin/prenotazioni/${booking.id}`}
-                  className="-mx-3 flex flex-col gap-1 rounded-lg px-3 py-3 transition hover:bg-ocean-light md:flex-row md:items-center md:justify-between"
-                >
-                  <div>
-                    <p className="font-black text-ocean-deep">{booking.customer.name}</p>
-                    <p className="text-sm text-[#4A6580]">
-                      {booking.date.toLocaleDateString('en-GB')} · {booking.items.map((i) => i.product.name).join(', ')}
-                    </p>
-                  </div>
-                  <span className="shrink-0 font-black text-ocean-deep">
-                    +€{booking.commission?.toFixed(2) ?? '0.00'}
-                  </span>
-                </Link>
-              ))}
+              {partner.bookings.map((booking) => {
+                const counted = booking.status === 'CONFIRMED' || booking.status === 'COMPLETED'
+                return (
+                  <Link
+                    key={booking.id}
+                    href={`/admin/prenotazioni/${booking.id}`}
+                    className="-mx-3 flex flex-col gap-1 rounded-lg px-3 py-3 transition hover:bg-ocean-light md:flex-row md:items-center md:justify-between"
+                  >
+                    <div>
+                      <p className="font-black text-ocean-deep">{booking.customer.name}</p>
+                      <p className="text-sm text-[#4A6580]">
+                        {booking.date.toLocaleDateString('en-GB')} · {booking.items.map((i) => i.product.name).join(', ')}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <Badge
+                        tone={
+                          booking.status === 'PENDING'
+                            ? 'yellow'
+                            : booking.status === 'CONFIRMED'
+                              ? 'green'
+                              : booking.status === 'CANCELLED'
+                                ? 'red'
+                                : 'dark'
+                        }
+                      >
+                        {booking.status}
+                      </Badge>
+                      <span className={`font-black ${counted ? 'text-ocean-deep' : 'text-[#4A6580] line-through decoration-1'}`}>
+                        {counted ? '+' : ''}€{booking.commission?.toFixed(2) ?? '0.00'}
+                      </span>
+                    </div>
+                  </Link>
+                )
+              })}
             </div>
           </Card>
         </div>

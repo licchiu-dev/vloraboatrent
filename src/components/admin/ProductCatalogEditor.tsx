@@ -325,8 +325,8 @@ export default function ProductCatalogEditor({
                 <th className="pb-3 text-right">Public (€)</th>
                 <th className="pb-3">Fee type</th>
                 <th className="pb-3">Value</th>
-                <th className="pb-3 text-right">Partner pays</th>
-                <th className="pb-3 text-right">You earn</th>
+                <th className="pb-3 text-right">Quota New Rent Vlora</th>
+                <th className="pb-3 text-right">Quota partner</th>
                 <th className="pb-3"></th>
               </tr>
             </thead>

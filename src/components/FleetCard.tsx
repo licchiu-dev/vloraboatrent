@@ -56,6 +56,7 @@ export default function FleetCard({
           <div className="mt-5 pt-4 border-t border-[#D0E8F7]">
             {/* TODO: Sostituire con prezzo reale */}
             <span className="text-ocean-deep font-black text-lg">{price}</span>
+            <span className="text-[#4A6580] text-sm ml-1">+ FUEL</span>
             <span className="text-[#4A6580] text-sm ml-1">{priceSuffix}</span>
           </div>
         )}

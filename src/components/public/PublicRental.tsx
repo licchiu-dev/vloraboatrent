@@ -34,7 +34,7 @@ const copy = {
     fleetData: [
       ['Joker Boat 580', 8, 'Mercury 40/60 PRO (2026)', ['Length 5.80 m', 'Maximum speed: 30 mph (48 km/h)', 'Average fuel use: 12 liters/hour', 'Navigation style: Stable and comfortable', 'Best for: Families & groups'], 'from €XX', '/images/jokerboat.png', 'gommone'],
       ['Mingolla Brava 18', 6, 'Mercury 40/60 PRO (2026)', ['Length 5.80 m', 'Maximum speed: 35 mph (56 km/h)', 'Average fuel use: 10 liters/hour', 'Navigation style: Agile and sporty', 'Best for: Couples & small groups'], 'from €XX', '/images/brava16.png', 'barca'],
-      ['Joker Boat 500', 5, 'Mercury 30 PRO (2026)', ['Length 5.00 m', 'Maximum speed: 28 mph (45 km/h)', 'Average fuel use: 8 liters/hour', 'Navigation style: Nimble and easy to drive', 'Best for: Couples'], 'from €XX', '/images/jokerboat.png', 'gommone_piccolo'],
+      ['Joker Boat 500', 5, 'Mercury 40/60 PRO (2026)', ['Length 5.00 m', 'Maximum speed: 28 mph (45 km/h)', 'Average fuel use: 8 liters/hour', 'Navigation style: Nimble and easy to drive', 'Best for: Couples'], 'from €XX', '/images/jokerboat.png', 'gommone_piccolo'],
     ],
     process: [
       ['09:00', 'Pier meeting', 'Arrive at the pier, meet the team and start check-in.'],
@@ -76,7 +76,7 @@ const copy = {
     fleetData: [
       ['Joker Boat 580', 8, 'Mercury 40/60 PRO (2026)', ['Lunghezza 5,80 m', 'Velocità massima: 30 miglia orarie (48 km/h)', "Consumo medio: 12 litri l'ora", 'Stile di navigazione: stabile e confortevole', 'Ideale per: famiglie e gruppi'], 'da €XX', '/images/jokerboat.png', 'gommone'],
       ['Mingolla Brava 18', 6, 'Mercury 40/60 PRO (2026)', ['Lunghezza 5,80 m', 'Velocità massima: 35 miglia orarie (56 km/h)', "Consumo medio: 10 litri l'ora", 'Stile di navigazione: agile e sportivo', 'Ideale per: coppie e piccoli gruppi'], 'da €XX', '/images/brava16.png', 'barca'],
-      ['Joker Boat 500', 5, 'Mercury 30 PRO (2026)', ['Lunghezza 5,00 m', 'Velocità massima: 28 miglia orarie (45 km/h)', "Consumo medio: 8 litri l'ora", 'Stile di navigazione: agile e facile da guidare', 'Ideale per: coppie'], 'da €XX', '/images/jokerboat.png', 'gommone_piccolo'],
+      ['Joker Boat 500', 5, 'Mercury 40/60 PRO (2026)', ['Lunghezza 5,00 m', 'Velocità massima: 28 miglia orarie (45 km/h)', "Consumo medio: 8 litri l'ora", 'Stile di navigazione: agile e facile da guidare', 'Ideale per: coppie'], 'da €XX', '/images/jokerboat.png', 'gommone_piccolo'],
     ],
     process: [
       ['09:00', 'Arrivo al molo', 'Ti presenti al molo, incontri il team e iniziamo il check-in.'],
@@ -118,7 +118,7 @@ const copy = {
     fleetData: [
       ['Joker Boat 580', 8, 'Mercury 40/60 PRO (2026)', ['Gjatësia 5.80 m', 'Shpejtësia maksimale: 30 mph (48 km/h)', 'Konsumi mesatar: 12 litra/orë', 'Stili i lundrimit: i qëndrueshëm dhe komod', 'Më e mira për: familje dhe grupe'], 'nga €XX', '/images/jokerboat.png', 'gommone'],
       ['Mingolla Brava 18', 6, 'Mercury 40/60 PRO (2026)', ['Gjatësia 5.80 m', 'Shpejtësia maksimale: 35 mph (56 km/h)', 'Konsumi mesatar: 10 litra/orë', 'Stili i lundrimit: e shkathët dhe sportive', 'Më e mira për: çifte dhe grupe të vogla'], 'nga €XX', '/images/brava16.png', 'barca'],
-      ['Joker Boat 500', 5, 'Mercury 30 PRO (2026)', ['Gjatësia 5.00 m', 'Shpejtësia maksimale: 28 mph (45 km/h)', 'Konsumi mesatar: 8 litra/orë', 'Stili i lundrimit: e shkathët dhe e lehtë', 'Më e mira për: çifte'], 'nga €XX', '/images/jokerboat.png', 'gommone_piccolo'],
+      ['Joker Boat 500', 5, 'Mercury 40/60 PRO (2026)', ['Gjatësia 5.00 m', 'Shpejtësia maksimale: 28 mph (45 km/h)', 'Konsumi mesatar: 8 litra/orë', 'Stili i lundrimit: e shkathët dhe e lehtë', 'Më e mira për: çifte'], 'nga €XX', '/images/jokerboat.png', 'gommone_piccolo'],
     ],
     process: [
       ['09:00', 'Takim në mol', 'Mbërrin në mol, takon ekipin dhe nis check-in.'],
@@ -160,7 +160,7 @@ const copy = {
     fleetData: [
       ['Joker Boat 580', 8, 'Mercury 40/60 PRO (2026)', ['الطول 5.80 م', 'السرعة القصوى: 30 ميل/س (48 كم/س)', 'متوسط الاستهلاك: 12 لتر/ساعة', 'أسلوب الملاحة: ثابت ومريح', 'الأفضل لـ: العائلات والمجموعات'], 'من €XX', '/images/jokerboat.png', 'gommone'],
       ['Mingolla Brava 18', 6, 'Mercury 40/60 PRO (2026)', ['الطول 5.80 م', 'السرعة القصوى: 35 ميل/س (56 كم/س)', 'متوسط الاستهلاك: 10 لتر/ساعة', 'أسلوب الملاحة: رشيق ورياضي', 'الأفضل لـ: الأزواج والمجموعات الصغيرة'], 'من €XX', '/images/brava16.png', 'barca'],
-      ['Joker Boat 500', 5, 'Mercury 30 PRO (2026)', ['الطول 5.00 م', 'السرعة القصوى: 28 ميل/س (45 كم/س)', 'متوسط الاستهلاك: 8 لتر/ساعة', 'أسلوب الملاحة: رشيق وسهل القيادة', 'الأفضل لـ: الأزواج'], 'من €XX', '/images/jokerboat.png', 'gommone_piccolo'],
+      ['Joker Boat 500', 5, 'Mercury 40/60 PRO (2026)', ['الطول 5.00 م', 'السرعة القصوى: 28 ميل/س (45 كم/س)', 'متوسط الاستهلاك: 8 لتر/ساعة', 'أسلوب الملاحة: رشيق وسهل القيادة', 'الأفضل لـ: الأزواج'], 'من €XX', '/images/jokerboat.png', 'gommone_piccolo'],
     ],
     process: [
       ['09:00', 'الوصول إلى الرصيف', 'تصل إلى الرصيف وتلتقي بالفريق ونبدأ تسجيل الدخول.'],
@@ -202,7 +202,7 @@ const copy = {
     fleetData: [
       ['Joker Boat 580', 8, 'Mercury 40/60 PRO (2026)', ['Длина 5.80 м', 'Максимальная скорость: 30 миль/ч (48 км/ч)', 'Средний расход: 12 л/ч', 'Стиль хода: устойчивый и комфортный', 'Лучше всего для: семей и групп'], 'от €XX', '/images/jokerboat.png', 'gommone'],
       ['Mingolla Brava 18', 6, 'Mercury 40/60 PRO (2026)', ['Длина 5.80 м', 'Максимальная скорость: 35 миль/ч (56 км/ч)', 'Средний расход: 10 л/ч', 'Стиль хода: маневренный и спортивный', 'Лучше всего для: пар и небольших групп'], 'от €XX', '/images/brava16.png', 'barca'],
-      ['Joker Boat 500', 5, 'Mercury 30 PRO (2026)', ['Длина 5.00 м', 'Максимальная скорость: 28 миль/ч (45 км/ч)', 'Средний расход: 8 л/ч', 'Стиль хода: маневренный и простой', 'Лучше всего для: пар'], 'от €XX', '/images/jokerboat.png', 'gommone_piccolo'],
+      ['Joker Boat 500', 5, 'Mercury 40/60 PRO (2026)', ['Длина 5.00 м', 'Максимальная скорость: 28 миль/ч (45 км/ч)', 'Средний расход: 8 л/ч', 'Стиль хода: маневренный и простой', 'Лучше всего для: пар'], 'от €XX', '/images/jokerboat.png', 'gommone_piccolo'],
     ],
     process: [
       ['09:00', 'Встреча у причала', 'Вы приходите к причалу, встречаете команду и проходите check-in.'],
@@ -244,7 +244,7 @@ const copy = {
     fleetData: [
       ['Joker Boat 580', 8, 'Mercury 40/60 PRO (2026)', ['长度 5.80 m', '最高速度：30 mph（48 km/h）', '平均油耗：12 升/小时', '航行风格：稳定舒适', '适合：家庭和团体'], '起价 €XX', '/images/jokerboat.png', 'gommone'],
       ['Mingolla Brava 18', 6, 'Mercury 40/60 PRO (2026)', ['长度 5.80 m', '最高速度：35 mph（56 km/h）', '平均油耗：10 升/小时', '航行风格：灵活运动', '适合：情侣和小团体'], '起价 €XX', '/images/brava16.png', 'barca'],
-      ['Joker Boat 500', 5, 'Mercury 30 PRO (2026)', ['长度 5.00 m', '最高速度：28 mph（45 km/h）', '平均油耗：8 升/小时', '航行风格：灵活易操控', '适合：情侣'], '起价 €XX', '/images/jokerboat.png', 'gommone_piccolo'],
+      ['Joker Boat 500', 5, 'Mercury 40/60 PRO (2026)', ['长度 5.00 m', '最高速度：28 mph（45 km/h）', '平均油耗：8 升/小时', '航行风格：灵活易操控', '适合：情侣'], '起价 €XX', '/images/jokerboat.png', 'gommone_piccolo'],
     ],
     process: [
       ['09:00', '码头集合', '到达码头，与团队会合并开始 check-in。'],
@@ -415,7 +415,7 @@ export default function PublicRental({ lang, sitePrices }: { lang: Lang; sitePri
             <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-3">{t.bookTitle}</h2>
             <p className="text-white/70 text-lg">{t.bookSub}</p>
           </div>
-          <div className="max-w-2xl mx-auto bg-white rounded-3xl p-8 md:p-12 shadow-2xl shadow-black/25">
+          <div className="max-w-2xl md:max-w-4xl mx-auto bg-white rounded-3xl p-8 md:p-12 shadow-2xl shadow-black/25">
             <BookingForm tipo="noleggio" lang={lang} />
           </div>
         </div>

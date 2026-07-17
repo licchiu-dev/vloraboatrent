@@ -21,7 +21,12 @@ export default async function BookingDetail({
   const [booking, messages, products] = await Promise.all([
     prisma.booking.findUnique({
       where: { id },
-      include: { customer: true, partner: true, items: { include: { product: true } }, fleetAssignments: true },
+      include: {
+        customer: true,
+        partner: true,
+        items: { include: { product: true } },
+        fleetAssignments: { include: { fleetAsset: true } },
+      },
     }),
     prisma.bookingMessage.findMany({ where: { bookingId: id }, orderBy: { sentAt: 'desc' } }),
     prisma.product.findMany({ where: { active: true }, orderBy: [{ category: 'asc' }, { name: 'asc' }] }),
@@ -85,6 +90,7 @@ export default async function BookingDetail({
               bookingId={booking.id}
               date={booking.date}
               totalPublic={booking.totalPublic}
+              boatName={booking.fleetAssignments.map((a) => a.fleetAsset.name).join(', ') || null}
               initialMessages={messages.map((m) => ({ ...m, sentAt: m.sentAt.toISOString() }))}
             />
             <DeleteBookingButton bookingId={booking.id} />

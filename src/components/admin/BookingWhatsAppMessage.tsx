@@ -10,17 +10,20 @@ type Props = {
   bookingId: string
   date: Date
   totalPublic: number | null
+  boatName: string | null
   initialMessages: Message[]
 }
 
 function buildMessage({
   date,
   totalPublic,
+  boatName,
   arrivalTime,
   numPeople,
 }: {
   date: Date
   totalPublic: number | null
+  boatName: string | null
   arrivalTime: string
   numPeople: string
 }): string {
@@ -39,6 +42,7 @@ function buildMessage({
     `Date: ${dateStr}`,
     `Number of people: ${peopleStr}`,
     `Total amount: ${amount}+fuel`,
+    `Boat: ${boatName || '[boat name]'}`,
     ``,
     `Arrival time at the pier: ${timeStr} ⏰`,
     `Please arrive on time so we can complete the check-in and prepare everything before departure.`,
@@ -66,11 +70,11 @@ function buildMessage({
 const inputClass =
   'w-full rounded-lg border border-[#D0E8F7] bg-white px-3 py-2 text-sm text-[#1a2e3b] focus:outline-none focus:ring-2 focus:ring-ocean-mid'
 
-export default function BookingWhatsAppMessage({ bookingId, date, totalPublic, initialMessages }: Props) {
+export default function BookingWhatsAppMessage({ bookingId, date, totalPublic, boatName, initialMessages }: Props) {
   const [arrivalTime, setArrivalTime] = useState('')
   const [numPeople, setNumPeople] = useState('')
   const [text, setText] = useState(() =>
-    buildMessage({ date, totalPublic, arrivalTime: '', numPeople: '' })
+    buildMessage({ date, totalPublic, boatName, arrivalTime: '', numPeople: '' })
   )
   const [copied, setCopied] = useState(false)
   const [history, setHistory] = useState<Message[]>(initialMessages)
@@ -78,8 +82,8 @@ export default function BookingWhatsAppMessage({ bookingId, date, totalPublic, i
   const [copiedHistoryId, setCopiedHistoryId] = useState<string | null>(null)
 
   useEffect(() => {
-    setText(buildMessage({ date, totalPublic, arrivalTime, numPeople }))
-  }, [arrivalTime, numPeople, date, totalPublic])
+    setText(buildMessage({ date, totalPublic, boatName, arrivalTime, numPeople }))
+  }, [arrivalTime, numPeople, date, totalPublic, boatName])
 
   async function copy() {
     await navigator.clipboard.writeText(text)

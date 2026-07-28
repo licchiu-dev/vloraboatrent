@@ -1,5 +1,8 @@
+import { revalidatePath } from 'next/cache'
 import { apiRequireRole } from '@/lib/guards'
 import { prisma } from '@/lib/prisma'
+
+const NOLEGGIO_PATHS = ['/noleggio', '/it/noleggio', '/sq/noleggio', '/ru/noleggio', '/zh/noleggio', '/ar/noleggio']
 
 const DEFAULTS: { key: string; label: string; price: number }[] = [
   { key: 'gommone', label: 'Gommone (Joker Boat 580)', price: 200 },
@@ -31,5 +34,6 @@ export async function PATCH(request: Request) {
       price: Number(price),
     },
   })
+  NOLEGGIO_PATHS.forEach((path) => revalidatePath(path))
   return Response.json(row)
 }

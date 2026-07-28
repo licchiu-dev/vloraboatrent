@@ -1,6 +1,9 @@
 import { ProductCategory } from '@prisma/client'
+import { revalidatePath } from 'next/cache'
 import { apiRequireRole } from '@/lib/guards'
 import { prisma } from '@/lib/prisma'
+
+const NOLEGGIO_PATHS = ['/noleggio', '/it/noleggio', '/sq/noleggio', '/ru/noleggio', '/zh/noleggio', '/ar/noleggio']
 
 export async function GET() {
   const products = await prisma.product.findMany({ where: { active: true }, orderBy: { name: 'asc' } })
@@ -23,6 +26,7 @@ export async function POST(request: Request) {
       active: true,
     },
   })
+  NOLEGGIO_PATHS.forEach((path) => revalidatePath(path))
   return Response.json(product, { status: 201 })
 }
 
@@ -59,5 +63,6 @@ export async function PATCH(request: Request) {
       description: body.description,
     },
   })
+  NOLEGGIO_PATHS.forEach((path) => revalidatePath(path))
   return Response.json(product)
 }

@@ -7,6 +7,12 @@ const JULY_PRICES: Record<RentalBoatKind, { fullDay: number; halfDay: number }> 
   barca: { fullDay: 230, halfDay: 150 },
 }
 
+const AUGUST_PRICES: Record<RentalBoatKind, { fullDay: number; halfDay: number }> = {
+  gommone_piccolo: { fullDay: 200, halfDay: 200 },
+  gommone_grande: { fullDay: 230, halfDay: 230 },
+  barca: { fullDay: 250, halfDay: 250 },
+}
+
 export function rentalBoatKind(input: { name: string; category?: string | null }) {
   const name = input.name.toLowerCase()
   if (input.category === 'BARCA' || /barca|brava|mingolla/.test(name)) return 'barca'
@@ -16,7 +22,7 @@ export function rentalBoatKind(input: { name: string; category?: string | null }
 
 export function rentalPriceForDate(kind: RentalBoatKind, slot: PublicRentalSlot, date: string) {
   const month = Number(date.slice(5, 7))
-  const seasonal = month === 7 ? JULY_PRICES[kind] : JULY_PRICES[kind]
+  const seasonal = month === 8 ? AUGUST_PRICES[kind] : JULY_PRICES[kind]
   return slot === 'GIORNATA_INTERA' ? seasonal.fullDay : seasonal.halfDay
 }
 

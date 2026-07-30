@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
 import { Badge } from './Ui'
 
@@ -59,17 +60,19 @@ function OccupancyDonut({
   )
 }
 
-export default function FleetOccupancyGrid({
-  boats,
-  days,
-  totalCount,
-  totalMax,
-}: {
-  boats: BoatOccupancy[]
-  days: number
-  totalCount: number
-  totalMax: number
-}) {
+export default function FleetOccupancyGrid({ boats, days }: { boats: BoatOccupancy[]; days: number }) {
+  const [enabled, setEnabled] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(boats.map((boat) => [boat.id, true]))
+  )
+
+  function toggle(id: string) {
+    setEnabled((prev) => ({ ...prev, [id]: !prev[id] }))
+  }
+
+  const includedBoats = boats.filter((boat) => enabled[boat.id])
+  const totalCount = includedBoats.reduce((sum, boat) => sum + boat.count, 0)
+  const totalMax = includedBoats.length * days
+
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-4 rounded-lg border-2 border-ocean-bright/30 bg-ocean-light/40 p-4">
@@ -79,21 +82,40 @@ export default function FleetOccupancyGrid({
           <p className="mt-1 text-2xl font-black text-ocean-deep">
             {totalCount}/{totalMax}
           </p>
-          <p className="text-xs text-[#4A6580]">prenotazioni su {days} giorni × {boats.length} barche</p>
+          <p className="text-xs text-[#4A6580]">
+            prenotazioni su {days} giorni × {includedBoats.length} barche incluse
+          </p>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        {boats.map((boat) => (
-          <div key={boat.id} className="flex flex-col items-center gap-2 rounded-lg border border-[#D0E8F7] p-3 text-center">
-            <OccupancyDonut count={boat.count} max={days} />
-            <p className="text-xs font-black leading-tight text-ocean-deep">{boat.name}</p>
-            <p className="text-xs font-bold text-[#4A6580]">
-              {boat.count}/{days}
-            </p>
-            {!boat.active && <Badge tone="dark">Non attiva</Badge>}
-          </div>
-        ))}
+        {boats.map((boat) => {
+          const isEnabled = enabled[boat.id]
+          return (
+            <div
+              key={boat.id}
+              className={`flex flex-col items-center gap-2 rounded-lg border p-3 text-center transition ${
+                isEnabled ? 'border-[#D0E8F7]' : 'border-[#D0E8F7] opacity-40'
+              }`}
+            >
+              <OccupancyDonut count={boat.count} max={days} />
+              <p className="text-xs font-black leading-tight text-ocean-deep">{boat.name}</p>
+              <p className="text-xs font-bold text-[#4A6580]">
+                {boat.count}/{days}
+              </p>
+              {!boat.active && <Badge tone="dark">Non attiva</Badge>}
+              <label className="mt-1 flex items-center gap-1.5 text-xs font-bold text-[#4A6580]">
+                <input
+                  type="checkbox"
+                  checked={isEnabled}
+                  onChange={() => toggle(boat.id)}
+                  className="h-3.5 w-3.5 accent-ocean-mid"
+                />
+                Includi nel totale
+              </label>
+            </div>
+          )
+        })}
       </div>
     </div>
   )

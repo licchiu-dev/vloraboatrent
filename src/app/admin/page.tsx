@@ -69,7 +69,6 @@ export default async function AdminDashboard({
   const occMonthLabel = occMonthStart.toLocaleString('it-IT', { month: 'long', year: 'numeric' })
   const occPrevMonthParam = monthParam(selectedOcc.year, selectedOcc.monthIndex - 1)
   const occNextMonthParam = monthParam(selectedOcc.year, selectedOcc.monthIndex + 1)
-  const isOccCurrentMonth = selectedOcc.year === year && selectedOcc.monthIndex === currentMonth
   const daysInOccMonth = new Date(selectedOcc.year, selectedOcc.monthIndex + 1, 0).getDate()
 
   const [monthBookings, urgentBookings, partnerCount, seasonBookings, whatsappClicks, fleetAssets] = await Promise.all([
@@ -153,8 +152,6 @@ export default async function AdminDashboard({
     active: asset.active,
     count: asset.assignments.length,
   }))
-  const totalOccCount = boatOccupancy.reduce((sum, boat) => sum + boat.count, 0)
-  const totalOccMax = boatOccupancy.length * daysInOccMonth
 
   return (
     <>
@@ -320,22 +317,14 @@ export default async function AdminDashboard({
             </Link>
             <Link
               href={buildQuery(sp, { occMonth: occNextMonthParam })}
-              aria-disabled={isOccCurrentMonth}
-              className={`rounded-full px-4 py-2 text-sm font-black text-white ${
-                isOccCurrentMonth ? 'pointer-events-none bg-ocean-deep/40' : 'bg-ocean-deep hover:bg-ocean-mid'
-              }`}
+              className="rounded-full bg-ocean-deep px-4 py-2 text-sm font-black text-white hover:bg-ocean-mid"
             >
               Mese successivo →
             </Link>
           </div>
         </div>
         <div className="mt-5">
-          <FleetOccupancyGrid
-            boats={boatOccupancy}
-            days={daysInOccMonth}
-            totalCount={totalOccCount}
-            totalMax={totalOccMax}
-          />
+          <FleetOccupancyGrid boats={boatOccupancy} days={daysInOccMonth} />
         </div>
       </Card>
     </>

@@ -14,6 +14,7 @@ function WhatsAppButton() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chat on WhatsApp"
+      onClick={() => fetch('/api/whatsapp-click', { method: 'POST', keepalive: true })}
       className="fixed z-50 bottom-5 right-5 md:bottom-[30px] md:right-[30px] flex items-center gap-3 rounded-full bg-[#25D366] px-5 py-3.5 shadow-xl hover:bg-[#1ebe5d] transition-colors"
     >
       <svg

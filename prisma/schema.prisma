@@ -245,3 +245,8 @@ model SitePrice {
   price     Float
   updatedAt DateTime @updatedAt
 }
+
+model WhatsappClickEvent {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+}

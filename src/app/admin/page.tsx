@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { BookingStatus } from '@prisma/client'
 import { Badge, Card, PageHeader } from '@/components/admin/Ui'
 import WhatsappClicksChart from '@/components/admin/WhatsappClicksChart'
+import FleetOccupancyGrid from '@/components/admin/FleetOccupancyGrid'
 import { prisma } from '@/lib/prisma'
 import { bookingRevenue } from '@/lib/pricing'
 
@@ -30,6 +31,17 @@ function monthParam(year: number, monthIndex: number) {
   return `${year}-${String(monthIndex + 1).padStart(2, '0')}`
 }
 
+function buildQuery(current: Record<string, string | undefined>, overrides: Record<string, string>) {
+  const params = new URLSearchParams()
+  for (const [key, value] of Object.entries(current)) {
+    if (value) params.set(key, value)
+  }
+  for (const [key, value] of Object.entries(overrides)) {
+    params.set(key, value)
+  }
+  return `/admin?${params.toString()}`
+}
+
 export default async function AdminDashboard({
   searchParams,
 }: {
@@ -51,7 +63,16 @@ export default async function AdminDashboard({
   const nextMonthParam = monthParam(selected.year, selected.monthIndex + 1)
   const isCurrentMonth = selected.year === year && selected.monthIndex === currentMonth
 
-  const [monthBookings, urgentBookings, partnerCount, seasonBookings, whatsappClicks] = await Promise.all([
+  const selectedOcc = parseMonthParam(sp.occMonth) ?? { year, monthIndex: currentMonth }
+  const occMonthStart = new Date(selectedOcc.year, selectedOcc.monthIndex, 1)
+  const occMonthEnd = new Date(selectedOcc.year, selectedOcc.monthIndex + 1, 1)
+  const occMonthLabel = occMonthStart.toLocaleString('it-IT', { month: 'long', year: 'numeric' })
+  const occPrevMonthParam = monthParam(selectedOcc.year, selectedOcc.monthIndex - 1)
+  const occNextMonthParam = monthParam(selectedOcc.year, selectedOcc.monthIndex + 1)
+  const isOccCurrentMonth = selectedOcc.year === year && selectedOcc.monthIndex === currentMonth
+  const daysInOccMonth = new Date(selectedOcc.year, selectedOcc.monthIndex + 1, 0).getDate()
+
+  const [monthBookings, urgentBookings, partnerCount, seasonBookings, whatsappClicks, fleetAssets] = await Promise.all([
     prisma.booking.findMany({
       where: { date: { gte: monthStart, lt: monthEnd }, status: { in: REVENUE_STATUSES } },
       select: { totalPublic: true },
@@ -73,6 +94,15 @@ export default async function AdminDashboard({
     prisma.whatsappClickEvent.findMany({
       where: { createdAt: { gte: clicksMonthStart, lt: clicksMonthEnd } },
       select: { createdAt: true },
+    }),
+    prisma.fleetAsset.findMany({
+      include: {
+        assignments: {
+          where: { booking: { date: { gte: occMonthStart, lt: occMonthEnd }, status: { in: REVENUE_STATUSES } } },
+          select: { id: true },
+        },
+      },
+      orderBy: [{ active: 'desc' }, { name: 'asc' }],
     }),
   ])
 
@@ -116,6 +146,15 @@ export default async function AdminDashboard({
     day: i + 1,
     count: clicksByDay.get(i + 1) ?? 0,
   }))
+
+  const boatOccupancy = fleetAssets.map((asset) => ({
+    id: asset.id,
+    name: asset.name,
+    active: asset.active,
+    count: asset.assignments.length,
+  }))
+  const totalOccCount = boatOccupancy.reduce((sum, boat) => sum + boat.count, 0)
+  const totalOccMax = boatOccupancy.length * daysInOccMonth
 
   return (
     <>
@@ -243,13 +282,13 @@ export default async function AdminDashboard({
           </div>
           <div className="flex items-center gap-2">
             <Link
-              href={`/admin?month=${prevMonthParam}`}
+              href={buildQuery(sp, { month: prevMonthParam })}
               className="rounded-full border border-[#D0E8F7] px-4 py-2 text-sm font-black text-ocean-deep hover:bg-ocean-light"
             >
               ← Mese precedente
             </Link>
             <Link
-              href={`/admin?month=${nextMonthParam}`}
+              href={buildQuery(sp, { month: nextMonthParam })}
               aria-disabled={isCurrentMonth}
               className={`rounded-full px-4 py-2 text-sm font-black text-white ${
                 isCurrentMonth ? 'pointer-events-none bg-ocean-deep/40' : 'bg-ocean-deep hover:bg-ocean-mid'
@@ -261,6 +300,42 @@ export default async function AdminDashboard({
         </div>
         <div className="mt-5">
           <WhatsappClicksChart data={whatsappClicksChartData} />
+        </div>
+      </Card>
+
+      <Card className="mt-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-black text-ocean-deep">Occupazione flotta</h2>
+            <p className="mt-1 text-sm text-[#4A6580] capitalize">
+              Prenotazioni confermate + completate · {occMonthLabel}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link
+              href={buildQuery(sp, { occMonth: occPrevMonthParam })}
+              className="rounded-full border border-[#D0E8F7] px-4 py-2 text-sm font-black text-ocean-deep hover:bg-ocean-light"
+            >
+              ← Mese precedente
+            </Link>
+            <Link
+              href={buildQuery(sp, { occMonth: occNextMonthParam })}
+              aria-disabled={isOccCurrentMonth}
+              className={`rounded-full px-4 py-2 text-sm font-black text-white ${
+                isOccCurrentMonth ? 'pointer-events-none bg-ocean-deep/40' : 'bg-ocean-deep hover:bg-ocean-mid'
+              }`}
+            >
+              Mese successivo →
+            </Link>
+          </div>
+        </div>
+        <div className="mt-5">
+          <FleetOccupancyGrid
+            boats={boatOccupancy}
+            days={daysInOccMonth}
+            totalCount={totalOccCount}
+            totalMax={totalOccMax}
+          />
         </div>
       </Card>
     </>

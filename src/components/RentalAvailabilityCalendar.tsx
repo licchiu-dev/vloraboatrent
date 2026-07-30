@@ -10,7 +10,7 @@ type Asset = {
   name: string
   category: string
   booked: Record<string, string[]>
-  prices: { fullDay: number; halfDay: number }
+  prices: Record<string, { fullDay: number; halfDay: number }>
 }
 
 type Selection = {
@@ -269,7 +269,7 @@ export default function RentalAvailabilityCalendar({
                               >
                                 <span className="block text-xs font-black leading-tight">{t.full}</span>
                                 <span className={`mt-1 block text-sm font-bold ${selected || blocked ? 'text-white/85' : 'text-[#4A6580]'}`}>
-                                  EUR {asset.prices.fullDay}
+                                  EUR {asset.prices[date]?.fullDay}
                                 </span>
                               </button>
                             )

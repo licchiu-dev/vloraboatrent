@@ -9,6 +9,17 @@ function dayKey(date: Date) {
   return date.toISOString().slice(0, 10)
 }
 
+function dateRange(from: string, to: string) {
+  const dates: string[] = []
+  const current = new Date(`${from}T00:00:00Z`)
+  const end = new Date(`${to}T00:00:00Z`)
+  while (current <= end) {
+    dates.push(current.toISOString().slice(0, 10))
+    current.setUTCDate(current.getUTCDate() + 1)
+  }
+  return dates
+}
+
 function blockedSlots(booking: { timeSlot: string; halfDayPeriod: string | null }) {
   if (booking.timeSlot === 'GIORNATA_INTERA') return ['MATTINA', 'POMERIGGIO']
   if (booking.halfDayPeriod === 'MATTINA') return ['MATTINA']
@@ -24,6 +35,8 @@ export async function GET(request: Request) {
   if (!from || !to) {
     return Response.json({ error: 'from and to are required in YYYY-MM-DD format.' }, { status: 400 })
   }
+
+  const dates = dateRange(from, to)
 
   const assets = await prisma.fleetAsset.findMany({
     where: { active: true },
@@ -68,10 +81,15 @@ export async function GET(request: Request) {
         productId: asset.pricingProductId,
         productName: asset.pricingProduct.name,
         booked,
-        prices: {
-          fullDay: rentalPriceForDate(kind, 'GIORNATA_INTERA', from),
-          halfDay: rentalPriceForDate(kind, 'MATTINA', from),
-        },
+        prices: Object.fromEntries(
+          dates.map((date) => [
+            date,
+            {
+              fullDay: rentalPriceForDate(kind, 'GIORNATA_INTERA', date),
+              halfDay: rentalPriceForDate(kind, 'MATTINA', date),
+            },
+          ])
+        ),
       }
     }),
   })

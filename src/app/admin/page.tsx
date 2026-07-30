@@ -20,13 +20,36 @@ function baseName(name: string) {
   return name.replace(/ - (Mezza giornata|Giornata intera)$/i, '').trim()
 }
 
-export default async function AdminDashboard() {
+function parseMonthParam(value: string | undefined) {
+  const match = value?.match(/^(\d{4})-(\d{2})$/)
+  if (!match) return null
+  return { year: Number(match[1]), monthIndex: Number(match[2]) - 1 }
+}
+
+function monthParam(year: number, monthIndex: number) {
+  return `${year}-${String(monthIndex + 1).padStart(2, '0')}`
+}
+
+export default async function AdminDashboard({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | undefined>>
+}) {
+  const sp = await searchParams
   const year = new Date().getFullYear()
   const currentMonth = new Date().getMonth()
   const monthStart = new Date(year, currentMonth, 1)
   const monthEnd = new Date(year, currentMonth + 1, 1)
   const seasonStart = new Date(year, 5, 1)
   const seasonEnd = new Date(year, 11, 1)
+
+  const selected = parseMonthParam(sp.month) ?? { year, monthIndex: currentMonth }
+  const clicksMonthStart = new Date(selected.year, selected.monthIndex, 1)
+  const clicksMonthEnd = new Date(selected.year, selected.monthIndex + 1, 1)
+  const clicksMonthLabel = clicksMonthStart.toLocaleString('it-IT', { month: 'long', year: 'numeric' })
+  const prevMonthParam = monthParam(selected.year, selected.monthIndex - 1)
+  const nextMonthParam = monthParam(selected.year, selected.monthIndex + 1)
+  const isCurrentMonth = selected.year === year && selected.monthIndex === currentMonth
 
   const [monthBookings, urgentBookings, partnerCount, seasonBookings, whatsappClicks] = await Promise.all([
     prisma.booking.findMany({
@@ -48,7 +71,7 @@ export default async function AdminDashboard() {
       },
     }),
     prisma.whatsappClickEvent.findMany({
-      where: { createdAt: { gte: monthStart, lt: monthEnd } },
+      where: { createdAt: { gte: clicksMonthStart, lt: clicksMonthEnd } },
       select: { createdAt: true },
     }),
   ])
@@ -88,7 +111,8 @@ export default async function AdminDashboard() {
     const day = click.createdAt.getDate()
     clicksByDay.set(day, (clicksByDay.get(day) ?? 0) + 1)
   }
-  const whatsappClicksChartData = Array.from({ length: new Date(year, currentMonth + 1, 0).getDate() }, (_, i) => ({
+  const daysInSelectedMonth = new Date(selected.year, selected.monthIndex + 1, 0).getDate()
+  const whatsappClicksChartData = Array.from({ length: daysInSelectedMonth }, (_, i) => ({
     day: i + 1,
     count: clicksByDay.get(i + 1) ?? 0,
   }))
@@ -210,11 +234,34 @@ export default async function AdminDashboard() {
       </Card>
 
       <Card className="mt-6">
-        <h2 className="text-xl font-black text-ocean-deep">Click bottone WhatsApp</h2>
-        <p className="mt-1 mb-5 text-sm text-[#4A6580]">
-          Click giornalieri sul bottone di contatto WhatsApp · Mese corrente.
-        </p>
-        <WhatsappClicksChart data={whatsappClicksChartData} />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-black text-ocean-deep">Click bottone WhatsApp</h2>
+            <p className="mt-1 text-sm text-[#4A6580] capitalize">
+              Click giornalieri sul bottone di contatto WhatsApp · {clicksMonthLabel}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/admin?month=${prevMonthParam}`}
+              className="rounded-full border border-[#D0E8F7] px-4 py-2 text-sm font-black text-ocean-deep hover:bg-ocean-light"
+            >
+              ← Mese precedente
+            </Link>
+            <Link
+              href={`/admin?month=${nextMonthParam}`}
+              aria-disabled={isCurrentMonth}
+              className={`rounded-full px-4 py-2 text-sm font-black text-white ${
+                isCurrentMonth ? 'pointer-events-none bg-ocean-deep/40' : 'bg-ocean-deep hover:bg-ocean-mid'
+              }`}
+            >
+              Mese successivo →
+            </Link>
+          </div>
+        </div>
+        <div className="mt-5">
+          <WhatsappClicksChart data={whatsappClicksChartData} />
+        </div>
       </Card>
     </>
   )

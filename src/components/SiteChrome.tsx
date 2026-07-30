@@ -7,6 +7,14 @@ import Footer from './Footer'
 const WA_HREF =
   'https://wa.me/355692098978?text=Hi%2C%20I%27d%20like%20to%20book%20a%20boat%20rental%20at%20Vlora%20Boat%20Rent'
 
+function reportWhatsappClick() {
+  if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+    navigator.sendBeacon('/api/wa-contact')
+  } else {
+    fetch('/api/wa-contact', { method: 'POST', keepalive: true }).catch(() => {})
+  }
+}
+
 function WhatsAppButton() {
   return (
     <a
@@ -14,7 +22,7 @@ function WhatsAppButton() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chat on WhatsApp"
-      onClick={() => fetch('/api/whatsapp-click', { method: 'POST', keepalive: true })}
+      onClick={reportWhatsappClick}
       className="fixed z-50 bottom-5 right-5 md:bottom-[30px] md:right-[30px] flex items-center gap-3 rounded-full bg-[#25D366] px-5 py-3.5 shadow-xl hover:bg-[#1ebe5d] transition-colors"
     >
       <svg

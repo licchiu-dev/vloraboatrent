@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import RentalAvailabilityCalendar from './RentalAvailabilityCalendar'
+import { WHATSAPP_BUSINESS_NUMBER } from '@/lib/constants'
 
 export type FormTipo = 'noleggio' | 'esperienza' | 'generico'
 
@@ -18,6 +19,7 @@ interface FormData {
   data: string
   fascia: string
   assetId: string
+  assetName: string
   note: string
   discountCode: string
   adulti: number
@@ -57,6 +59,7 @@ const initialData: FormData = {
   data: '',
   fascia: '',
   assetId: '',
+  assetName: '',
   note: '',
   discountCode: '',
   adulti: 1,
@@ -216,8 +219,8 @@ const copy = {
     dateRequired: 'Select a date',
     slotRequired: 'Select a time slot',
     experienceRequired: 'Select an experience',
-    sentTitle: 'Request sent!',
-    sentText: 'Thank you. We received your request and will contact you shortly.',
+    sentTitle: 'Almost done!',
+    sentText: "We've opened WhatsApp with your request ready — just hit send to confirm it. If it didn't open, check your browser's pop-up blocker.",
     fullName: 'Full name *',
     phone: 'Phone *',
     phoneNumber: 'Number',
@@ -262,8 +265,8 @@ const copy = {
     dateRequired: 'Seleziona una data',
     slotRequired: 'Seleziona una fascia oraria',
     experienceRequired: "Seleziona un'esperienza",
-    sentTitle: 'Richiesta inviata!',
-    sentText: 'Grazie! Abbiamo ricevuto la tua richiesta e ti contatteremo a breve.',
+    sentTitle: 'Quasi fatto!',
+    sentText: "Abbiamo aperto WhatsApp con la tua richiesta già pronta: ti basta premere invia per confermarla. Se non si è aperto, controlla il blocco popup del browser.",
     fullName: 'Nome e cognome *',
     phone: 'Telefono *',
     phoneNumber: 'Numero',
@@ -308,8 +311,8 @@ const copy = {
     dateRequired: 'Zgjidh një datë',
     slotRequired: 'Zgjidh orarin',
     experienceRequired: 'Zgjidh eksperiencën',
-    sentTitle: 'Kërkesa u dërgua!',
-    sentText: 'Faleminderit. E morëm kërkesën dhe do të të kontaktojmë së shpejti.',
+    sentTitle: "Gati për t'u dërguar!",
+    sentText: "Kemi hapur WhatsApp me kërkesën tënde gati — thjesht shtyp dërgo për ta konfirmuar. Nëse nuk u hap, kontrollo bllokuesin e dritareve (pop-up) të shfletuesit.",
     fullName: 'Emër dhe mbiemër *',
     phone: 'Telefon *',
     phoneNumber: 'Numri',
@@ -354,8 +357,8 @@ const copy = {
     dateRequired: 'اختر تاريخا',
     slotRequired: 'اختر فترة زمنية',
     experienceRequired: 'اختر التجربة',
-    sentTitle: 'تم إرسال الطلب!',
-    sentText: 'شكرا لك. استلمنا طلبك وسنتواصل معك قريبا.',
+    sentTitle: 'على وشك الانتهاء!',
+    sentText: 'لقد فتحنا واتساب مع رسالتك الجاهزة للإرسال — فقط اضغط على إرسال لتأكيد طلبك. إذا لم يفتح، تحقق من حاجب النوافذ المنبثقة في متصفحك.',
     fullName: 'الاسم الكامل *',
     phone: 'الهاتف *',
     phoneNumber: 'الرقم',
@@ -400,8 +403,8 @@ const copy = {
     dateRequired: 'Выберите дату',
     slotRequired: 'Выберите временной слот',
     experienceRequired: 'Выберите формат',
-    sentTitle: 'Заявка отправлена!',
-    sentText: 'Спасибо. Мы получили вашу заявку и скоро свяжемся с вами.',
+    sentTitle: 'Почти готово!',
+    sentText: 'Мы открыли WhatsApp с уже подготовленным сообщением — просто нажмите «отправить», чтобы подтвердить заявку. Если WhatsApp не открылся, проверьте блокировку всплывающих окон в браузере.',
     fullName: 'Имя и фамилия *',
     phone: 'Телефон *',
     phoneNumber: 'Номер',
@@ -446,8 +449,8 @@ const copy = {
     dateRequired: '请选择日期',
     slotRequired: '请选择时间段',
     experienceRequired: '请选择体验',
-    sentTitle: '请求已发送！',
-    sentText: '谢谢。我们已收到你的请求，并会尽快联系你。',
+    sentTitle: '即将完成！',
+    sentText: '我们已经打开WhatsApp并为您准备好了消息——只需点击发送即可确认您的预订请求。如果没有自动打开，请检查浏览器的弹窗拦截设置。',
     fullName: '姓名 *',
     phone: '电话 *',
     phoneNumber: '号码',
@@ -489,6 +492,51 @@ const copy = {
   },
 }
 
+const EXTRA_LABELS_IT: Record<string, string> = {
+  cannaMulinello: 'Canna + mulinello',
+  esca: 'Esca',
+  artificiale: 'Artificiale',
+  actionCam: 'Action cam',
+  mascheraBoccaglio: 'Maschera + boccaglio',
+  pinne: 'Pinne',
+  muta3mm: 'Muta 3 mm',
+  calzari: 'Calzari',
+  cinturaPesi: 'Cintura + pesi',
+  fucileSub: 'Fucile sub',
+  torciaSub: 'Torcia sub',
+}
+
+function buildAvailabilityMessage(tipo: FormTipo, data: FormData) {
+  const lines = [
+    'Ciao! Vorrei richiedere disponibilità per una prenotazione su Vlora Boat Rent 🚤',
+    '',
+    `Nome: ${data.nome}`,
+    `Telefono: ${data.phonePrefix}${data.phoneNumber}`,
+    `Email: ${data.email}`,
+    `Data: ${data.data}`,
+  ]
+
+  if (tipo === 'noleggio') {
+    lines.push('Servizio: Noleggio barca')
+    if (data.assetName) lines.push(`Barca: ${data.assetName}`)
+    lines.push('Fascia: Giornata intera')
+    lines.push(`Adulti: ${data.adulti}`, `Bambini: ${data.bambini}`)
+  } else if (tipo === 'esperienza') {
+    lines.push('Servizio: Esperienza di pesca')
+    lines.push(`Tipo: ${data.esperienzaPesca === 'pesca-apnea' ? 'Pesca in apnea' : 'Pesca con le canne'}`)
+    lines.push(`Partecipanti: ${data.partecipanti}`)
+    const extras = Object.entries(EXTRA_LABELS_IT)
+      .filter(([key]) => (data[key as keyof FormData] as number) > 0)
+      .map(([key, label]) => `${label} x${data[key as keyof FormData] as number}`)
+    if (extras.length) lines.push(`Extra: ${extras.join(', ')}`)
+  }
+
+  if (data.discountCode.trim()) lines.push(`Codice promo: ${data.discountCode.trim()}`)
+  if (data.note.trim()) lines.push(`Note: ${data.note.trim()}`)
+
+  return lines.join('\n')
+}
+
 export default function BookingForm({ tipo = 'generico', lang = 'en' }: BookingFormProps) {
   const t = copy[lang]
   const dir = lang === 'ar' ? 'rtl' : 'ltr'
@@ -509,18 +557,25 @@ export default function BookingForm({ tipo = 'generico', lang = 'en' }: BookingF
     return e
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const errs = validate()
     if (Object.keys(errs).length > 0) {
       setErrors(errs)
       return
     }
-    await fetch('/api/public-bookings', {
+
+    // Open WhatsApp synchronously (same click gesture) so browsers don't block the popup;
+    // the booking is still saved in the background for the admin dashboard/revenue reports.
+    const message = buildAvailabilityMessage(tipo, data)
+    window.open(`https://wa.me/${WHATSAPP_BUSINESS_NUMBER}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer')
+
+    fetch('/api/public-bookings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tipo, ...data, telefono: `${data.phonePrefix}${data.phoneNumber}` }),
-    })
+    }).catch(() => {})
+
     setSubmitted(true)
   }
 
@@ -613,11 +668,16 @@ export default function BookingForm({ tipo = 'generico', lang = 'en' }: BookingF
         <div>
           <RentalAvailabilityCalendar
             lang={lang}
-            value={data.assetId && data.data && data.fascia ? { assetId: data.assetId, date: data.data, fascia: 'Giornata intera' } : null}
+            value={
+              data.assetId && data.data && data.fascia
+                ? { assetId: data.assetId, assetName: data.assetName, date: data.data, fascia: 'Giornata intera' }
+                : null
+            }
             onSelect={(selection) => {
               setData((prev) => ({
                 ...prev,
                 assetId: selection.assetId,
+                assetName: selection.assetName,
                 data: selection.date,
                 fascia: 'Giornata intera',
               }))

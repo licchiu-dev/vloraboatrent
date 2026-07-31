@@ -3,9 +3,10 @@
 import { usePathname } from 'next/navigation'
 import Navbar from './Navbar'
 import Footer from './Footer'
+import { WHATSAPP_BUSINESS_NUMBER } from '@/lib/constants'
 
 const WA_HREF =
-  'https://wa.me/355692098978?text=Hi%2C%20I%27d%20like%20to%20book%20a%20boat%20rental%20at%20Vlora%20Boat%20Rent'
+  `https://wa.me/${WHATSAPP_BUSINESS_NUMBER}?text=Hi%2C%20I%27d%20like%20to%20book%20a%20boat%20rental%20at%20Vlora%20Boat%20Rent`
 
 function reportWhatsappClick() {
   if (typeof navigator !== 'undefined' && navigator.sendBeacon) {

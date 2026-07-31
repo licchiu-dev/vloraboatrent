@@ -17,6 +17,7 @@ type Selection = {
   date: string
   fascia: Slot
   assetId: string
+  assetName: string
 }
 
 const labels: Record<Lang, {
@@ -258,7 +259,7 @@ export default function RentalAvailabilityCalendar({
                               <button
                                 type="button"
                                 disabled={blocked}
-                                onClick={() => onSelect({ assetId: asset.id, date, fascia: 'Giornata intera' })}
+                                onClick={() => onSelect({ assetId: asset.id, assetName: asset.name, date, fascia: 'Giornata intera' })}
                                 className={`min-h-16 w-full rounded-lg border px-3 py-2 text-left transition focus:outline-none focus:ring-2 focus:ring-sand disabled:cursor-not-allowed ${
                                   selected
                                     ? 'border-emerald-600 bg-emerald-500 text-white shadow-md shadow-emerald-500/20'

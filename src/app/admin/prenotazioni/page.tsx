@@ -19,6 +19,7 @@ export default async function BookingsPage() {
     id: b.id,
     date: b.date.toISOString().slice(0, 10),
     customerName: b.customer.name,
+    customerPhone: b.customer.phone,
     services: b.items.map((i) => i.product.name).join(', '),
     timeSlot: b.timeSlot,
     paymentLabel: paymentLabel(b.paymentMethod, b.status),

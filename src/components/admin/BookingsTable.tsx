@@ -9,6 +9,7 @@ export type BookingRow = {
   id: string
   date: string // YYYY-MM-DD
   customerName: string
+  customerPhone: string
   services: string
   timeSlot: string
   paymentLabel: string
@@ -198,6 +199,7 @@ export default function BookingsTable({ rows }: { rows: BookingRow[] }) {
               </th>
               <SortableHeader label="Date" col="date" sort={sort} onSort={toggleSort} />
               <SortableHeader label="Customer" col="customerName" sort={sort} onSort={toggleSort} />
+              <SortableHeader label="Phone" col="customerPhone" sort={sort} onSort={toggleSort} />
               <SortableHeader label="Services" col="services" sort={sort} onSort={toggleSort} />
               <SortableHeader label="Slot" col="timeSlot" sort={sort} onSort={toggleSort} />
               <SortableHeader label="Payment" col="paymentLabel" sort={sort} onSort={toggleSort} />
@@ -223,6 +225,7 @@ export default function BookingsTable({ rows }: { rows: BookingRow[] }) {
                   {new Date(row.date + 'T12:00:00').toLocaleDateString('en-GB')}
                 </td>
                 <td className="pr-4 font-bold">{row.customerName}</td>
+                <td className="pr-4 whitespace-nowrap">{row.customerPhone}</td>
                 <td className="pr-4">{row.services}</td>
                 <td className="pr-4">{row.timeSlot}</td>
                 <td className="pr-4">{row.paymentLabel}</td>
@@ -252,7 +255,7 @@ export default function BookingsTable({ rows }: { rows: BookingRow[] }) {
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={10} className="py-12 text-center text-[#4A6580]">
+                <td colSpan={11} className="py-12 text-center text-[#4A6580]">
                   No bookings match the current filters.
                 </td>
               </tr>

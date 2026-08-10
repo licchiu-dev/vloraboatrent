@@ -11,7 +11,12 @@ function paymentLabel(paymentMethod: string, status: string) {
 
 export default async function BookingsPage() {
   const bookings = await prisma.booking.findMany({
-    include: { customer: true, partner: true, items: { include: { product: true } } },
+    include: {
+      customer: true,
+      partner: true,
+      items: { include: { product: true } },
+      fleetAssignments: { include: { fleetAsset: true } },
+    },
     orderBy: { date: 'desc' },
   })
 
@@ -20,6 +25,7 @@ export default async function BookingsPage() {
     date: b.date.toISOString().slice(0, 10),
     customerName: b.customer.name,
     customerPhone: b.customer.phone,
+    boatName: b.fleetAssignments.map((a) => a.fleetAsset.name).join(', ') || '—',
     services: b.items.map((i) => i.product.name).join(', '),
     timeSlot: b.timeSlot,
     paymentLabel: paymentLabel(b.paymentMethod, b.status),
